@@ -1,0 +1,117 @@
+{
+  "app": {
+    "title": "VaultDrop",
+    "badge": "End-to-End Encrypted & Zero Server Storage",
+    "tagline": "Peer-to-peer end-to-end encrypted file transfer",
+    "description": "No sign-up, no storage, no limits. Data streams directly between two devices."
+  },
+  "features": {
+    "p2p_title": "Direct P2P",
+    "p2p_desc": "Max speed via WebRTC DataChannel",
+    "crypto_title": "Zero-Knowledge",
+    "crypto_desc": "AES-GCM-256 in-browser crypto",
+    "stream_title": "10 GB+ Streaming",
+    "stream_desc": "Direct disk I/O stream transfer"
+  },
+  "header": {
+    "e2ee": "End-to-End Encrypted",
+    "connection": {
+      "p2p": "Direct P2P",
+      "relay": "Cloudflare Tunnel",
+      "waiting": "Waiting for Connection",
+      "connecting": "Connecting..."
+    }
+  },
+  "status": {
+    "idle": "Waiting for Connection",
+    "waiting": "Waiting for Connection",
+    "connecting": "Connecting...",
+    "direct_p2p": "Direct P2P",
+    "relay": "Cloudflare Tunnel"
+  },
+  "dropzone": {
+    "title": "Drag and drop your file here",
+    "subtitle": "or click to select from your device",
+    "browse": "Browse File",
+    "hint": "All file formats supported • 10 GB+ stream support",
+    "selected": "File selected",
+    "size": "Size",
+    "change": "Change",
+    "change_file": "Change",
+    "send_file": "Start Transfer"
+  },
+  "share": {
+    "title": "Share Link",
+    "description": "Share this link with the receiver. The encryption key resides strictly in the link and is never sent to the server.",
+    "copyLink": "Copy Link",
+    "copy_link": "Copy Link",
+    "copied": "Copied!",
+    "qrCode": "QR Code",
+    "shareNative": "Share",
+    "native_share": "Share",
+    "waitingForReceiver": "Waiting for receiver...",
+    "waiting_receiver": "Waiting for receiver...",
+    "receiverConnected": "Receiver connected!",
+    "receiver_connected": "Receiver connected!"
+  },
+  "progress": {
+    "sending": "Sending",
+    "receiving": "Receiving",
+    "speed": "Speed",
+    "remaining": "Time remaining",
+    "completed": "Transfer complete!",
+    "complete": "Transfer complete!",
+    "verifying": "Verifying...",
+    "verified": "File integrity verified ✓",
+    "verify_error": "File integrity verification failed!",
+    "unknown_file": "Unknown File",
+    "download_file": "Download File",
+    "transfer_another": "Transfer Another File",
+    "streaming_to_disk": "Streaming directly to disk (RAM < 30MB)",
+    "cancel": "Cancel"
+  },
+  "fallback": {
+    "title": "P2P Connection Failed",
+    "description": "Direct peer connection could not be established. You can continue the transfer via an encrypted Cloudflare tunnel.",
+    "security_title": "End-to-End Encryption Maintained",
+    "security": "Your file is encrypted locally in your browser. Cloudflare cannot decrypt or inspect file contents.",
+    "privacy_title": "Metadata Visibility",
+    "metadata": "In tunnel mode, Cloudflare can observe client IP addresses and transfer timestamps.",
+    "confirm": "Continue via Tunnel",
+    "cancel": "Cancel"
+  },
+  "receive": {
+    "title": "Receiving File",
+    "from": "Sender connected",
+    "accept": "Accept File",
+    "decline": "Decline",
+    "saving": "Downloading file...",
+    "saved": "File saved!",
+    "saveError": "Failed to save file",
+    "connected_waiting": "Connected, Waiting for File",
+    "sender_preparing": "Sender is encrypting and preparing file stream...",
+    "establishing": "Matching via signaling server...",
+    "choose_folder": "Choose Save Folder (Optional)",
+    "direct_disk": "Direct-to-Disk Stream Active (Zero RAM)"
+  },
+  "errors": {
+    "roomFull": "Room is full — only 2 people can connect at a time.",
+    "connectionLost": "Connection lost.",
+    "transferFailed": "Transfer failed.",
+    "hashMismatch": "File integrity check failed! The file may have been corrupted in transit.",
+    "browserNotSupported": "Your browser does not support this feature.",
+    "fileTooLarge": "File size is too large for this browser.",
+    "permissionDenied": "File save permission denied.",
+    "invalidLink": "Invalid share link.",
+    "roomNotFound": "Room not found or expired."
+  },
+  "theme": {
+    "light": "Light Mode",
+    "dark": "Dark Mode"
+  },
+  "common": {
+    "close": "Close",
+    "retry": "Retry",
+    "cancel": "Cancel"
+  }
+}

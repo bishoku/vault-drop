@@ -1,0 +1,22 @@
+node_modules/
+dist/
+.wrangler/
+.dev.vars
+*.local
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+*.tsbuildinfo

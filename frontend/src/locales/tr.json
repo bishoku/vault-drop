@@ -1,0 +1,117 @@
+{
+  "app": {
+    "title": "VaultDrop",
+    "badge": "Uçtan Uca Şifreli & Sıfır Sunucu Depolama",
+    "tagline": "Eşler arası, uçtan uca şifreli dosya aktarımı",
+    "description": "Kayıt yok, depolama yok, sınır yok. Veriniz yalnızca iki cihaz arasında akar."
+  },
+  "features": {
+    "p2p_title": "Doğrudan P2P",
+    "p2p_desc": "WebRTC ile maksimum aktarım hızı",
+    "crypto_title": "Zero-Knowledge",
+    "crypto_desc": "AES-GCM-256 tarayıcı içi şifreleme",
+    "stream_title": "10 GB+ Akış",
+    "stream_desc": "Disk I/O akışlı dosya transferi"
+  },
+  "header": {
+    "e2ee": "Uçtan Uca Şifreli",
+    "connection": {
+      "p2p": "Doğrudan P2P",
+      "relay": "Cloudflare Tüneli",
+      "waiting": "Bağlantı Bekleniyor",
+      "connecting": "Bağlanıyor..."
+    }
+  },
+  "status": {
+    "idle": "Bağlantı Bekleniyor",
+    "waiting": "Bağlantı Bekleniyor",
+    "connecting": "Bağlanıyor...",
+    "direct_p2p": "Doğrudan P2P",
+    "relay": "Cloudflare Tüneli"
+  },
+  "dropzone": {
+    "title": "Dosyanızı sürükleyip bırakın",
+    "subtitle": "veya bilgisayarınızdan seçmek için tıklayın",
+    "browse": "Dosya Seç",
+    "hint": "Tüm dosya formatları desteklenir • 10 GB+ akış desteği",
+    "selected": "Dosya seçildi",
+    "size": "Boyut",
+    "change": "Değiştir",
+    "change_file": "Değiştir",
+    "send_file": "Aktarımı Başlat"
+  },
+  "share": {
+    "title": "Paylaşım Linki",
+    "description": "Bu linki alıcıyla paylaşın. Şifreleme anahtarı yalnızca linkte bulunur, sunucuya asla gönderilmez.",
+    "copyLink": "Linki Kopyala",
+    "copy_link": "Linki Kopyala",
+    "copied": "Kopyalandı!",
+    "qrCode": "QR Kodu",
+    "shareNative": "Paylaş",
+    "native_share": "Paylaş",
+    "waitingForReceiver": "Alıcı bekleniyor...",
+    "waiting_receiver": "Alıcı bekleniyor...",
+    "receiverConnected": "Alıcı bağlandı!",
+    "receiver_connected": "Alıcı bağlandı!"
+  },
+  "progress": {
+    "sending": "Gönderiliyor",
+    "receiving": "Alınıyor",
+    "speed": "Hız",
+    "remaining": "Kalan süre",
+    "completed": "Transfer tamamlandı!",
+    "complete": "Transfer tamamlandı!",
+    "verifying": "Doğrulanıyor...",
+    "verified": "Dosya bütünlüğü doğrulandı ✓",
+    "verify_error": "Bütünlük doğrulaması başarısız!",
+    "unknown_file": "Bilinmeyen Dosya",
+    "download_file": "Dosyayı İndir",
+    "transfer_another": "Başka Bir Dosya Aktar",
+    "streaming_to_disk": "Doğrudan diske yazılıyor (RAM < 30MB)",
+    "cancel": "İptal Et"
+  },
+  "fallback": {
+    "title": "P2P Bağlantı Kurulamadı",
+    "description": "Doğrudan P2P bağlantısı kurulamadı. Aktarımı Cloudflare üzerinden şifrelenmiş tünel ile tamamlayabilirsiniz.",
+    "security_title": "Uçtan Uca Şifreleme Korunur",
+    "security": "Dosya içeriğiniz tarayıcınızda şifrelenir. Cloudflare aktarılan içeriği çözemez veya okuyamaz.",
+    "privacy_title": "Metaveri Görünürlüğü",
+    "metadata": "Tünel modunda Cloudflare, istemci IP adreslerini ve aktarım zaman damgalarını görebilir.",
+    "confirm": "Tünel ile Devam Et",
+    "cancel": "İptal"
+  },
+  "receive": {
+    "title": "Dosya Alınıyor",
+    "from": "Gönderici bağlı",
+    "accept": "Dosyayı Al",
+    "decline": "Reddet",
+    "saving": "Dosya indiriliyor...",
+    "saved": "Dosya kaydedildi!",
+    "saveError": "Dosya kaydedilemedi",
+    "connected_waiting": "Bağlandı, Dosya Bekleniyor",
+    "sender_preparing": "Gönderici dosyayı şifreleyip göndermeye hazırlanıyor...",
+    "establishing": "Sinyal sunucusu üzerinden eşleşme yapılıyor...",
+    "choose_folder": "Hedef Klasörü Seç (İsteğe Bağlı)",
+    "direct_disk": "Doğrudan Disk Akışı Aktif (Sıfır Bellek)"
+  },
+  "errors": {
+    "roomFull": "Oda dolu — aynı anda yalnızca 2 kişi bağlanabilir.",
+    "connectionLost": "Bağlantı koptu.",
+    "transferFailed": "Transfer başarısız oldu.",
+    "hashMismatch": "Dosya bütünlüğü doğrulaması başarısız! Dosya aktarım sırasında bozulmuş olabilir.",
+    "browserNotSupported": "Tarayıcınız bu özelliği desteklemiyor.",
+    "fileTooLarge": "Dosya boyutu bu tarayıcı için çok büyük.",
+    "permissionDenied": "Dosya kaydetme izni reddedildi.",
+    "invalidLink": "Geçersiz paylaşım linki.",
+    "roomNotFound": "Oda bulunamadı veya süresi dolmuş."
+  },
+  "theme": {
+    "light": "Açık Tema",
+    "dark": "Koyu Tema"
+  },
+  "common": {
+    "close": "Kapat",
+    "retry": "Tekrar Dene",
+    "cancel": "İptal"
+  }
+}
