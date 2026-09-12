@@ -19,6 +19,7 @@ import {
   type SessionKeys,
   type FileManifest,
 } from '../core/crypto';
+import { addTransferRecord } from '../core/history';
 
 const DEFAULT_PROD_SIGNALING_URL = 'wss://vaultdrop-signaling.barishoku.workers.dev';
 const SIGNALING_URL =
@@ -58,10 +59,14 @@ export function useWebRTC(): UseWebRTCReturn {
   const expectedSha256Ref = useRef<string | null>(null);
   const hasStartedSendRef = useRef(false);
   const manifestRef = useRef<FileManifest | null>(null);
+  const transferStartTimeRef = useRef<number | null>(null);
+  const hasRecordedCompletionRef = useRef<boolean>(false);
 
   const cleanup = useCallback(() => {
     isConnectingRef.current = false;
     hasStartedSendRef.current = false;
+    transferStartTimeRef.current = null;
+    hasRecordedCompletionRef.current = false;
     peerRef.current?.close();
     peerRef.current = null;
     workerRef.current?.destroy();
@@ -78,6 +83,35 @@ export function useWebRTC(): UseWebRTCReturn {
     expectedSha256Ref.current = null;
     manifestRef.current = null;
   }, []);
+
+  const recordSenderSuccess = useCallback(
+    async (sha256?: string) => {
+      if (hasRecordedCompletionRef.current) return;
+      hasRecordedCompletionRef.current = true;
+      const file = store.file;
+      if (!file) return;
+
+      const now = Date.now();
+      const startTime = transferStartTimeRef.current || now;
+      const durationMs = Math.max(100, now - startTime);
+      const avgSpeedBytesPerSec = durationMs > 0 ? (file.size / (durationMs / 1000)) : 0;
+      const connectionType = store.connectionState === 'relay' ? 'relay' : 'p2p';
+
+      await addTransferRecord({
+        fileName: file.name,
+        fileSize: file.size,
+        mimeType: file.type,
+        role: 'sender',
+        status: 'completed',
+        connectionType,
+        durationMs,
+        avgSpeedBytesPerSec,
+        sha256: sha256 || expectedSha256Ref.current || undefined,
+      });
+      store.loadHistory();
+    },
+    [store],
+  );
 
   const connectSignaling = useCallback(
     (roomId: string): Promise<WebSocket> => {
@@ -161,6 +195,8 @@ export function useWebRTC(): UseWebRTCReturn {
             const triggerSend = () => {
               if (hasStartedSendRef.current) return;
               hasStartedSendRef.current = true;
+              transferStartTimeRef.current = Date.now();
+              hasRecordedCompletionRef.current = false;
               console.log('[VaultDrop:Sender] Starting file stream transfer to receiver...');
 
               const worker = new TransferWorkerClient();
@@ -229,6 +265,7 @@ export function useWebRTC(): UseWebRTCReturn {
                     if (ctrl.success && (!expectedSha256Ref.current || ctrl.sha256?.toLowerCase() === expectedSha256Ref.current.toLowerCase())) {
                       store.setHashVerified(true);
                       store.setTransferState('completed');
+                      recordSenderSuccess(ctrl.sha256);
                     } else {
                       store.setHashVerified(false);
                       store.setError('errors.hashMismatch');
@@ -292,6 +329,7 @@ export function useWebRTC(): UseWebRTCReturn {
             if (ctrl.success && (!expectedSha256Ref.current || ctrl.sha256?.toLowerCase() === expectedSha256Ref.current.toLowerCase())) {
               store.setHashVerified(true);
               store.setTransferState('completed');
+              recordSenderSuccess(ctrl.sha256);
             } else {
               store.setHashVerified(false);
               store.setError('errors.hashMismatch');
@@ -310,7 +348,7 @@ export function useWebRTC(): UseWebRTCReturn {
         }
       };
     },
-    [cleanup, connectSignaling, store],
+    [cleanup, connectSignaling, recordSenderSuccess, store],
   );
 
   const startReceiving = useCallback(async () => {
@@ -347,6 +385,8 @@ export function useWebRTC(): UseWebRTCReturn {
 
       worker.onManifest = async (manifest) => {
         console.log('[VaultDrop:Receiver] Manifest received:', manifest.fileName, `(${manifest.fileSize} bytes, ${manifest.totalChunks} chunks)`);
+        transferStartTimeRef.current = Date.now();
+        hasRecordedCompletionRef.current = false;
         manifestRef.current = manifest;
         store.setFileManifest(manifest);
         store.setTransferState('receiving');
@@ -414,6 +454,30 @@ export function useWebRTC(): UseWebRTCReturn {
           try {
             ws.send(ackMsg);
           } catch {}
+        }
+
+        if (!hasRecordedCompletionRef.current) {
+          hasRecordedCompletionRef.current = true;
+          const now = Date.now();
+          const startTime = transferStartTimeRef.current || now;
+          const durationMs = Math.max(100, now - startTime);
+          const fileSize = manifest?.fileSize || 0;
+          const avgSpeedBytesPerSec = durationMs > 0 ? (fileSize / (durationMs / 1000)) : 0;
+          const connectionType = store.connectionState === 'relay' ? 'relay' : 'p2p';
+
+          addTransferRecord({
+            fileName,
+            fileSize,
+            mimeType: manifest?.mimeType,
+            role: 'receiver',
+            status: 'completed',
+            connectionType,
+            durationMs,
+            avgSpeedBytesPerSec,
+            sha256,
+          }).then(() => {
+            store.loadHistory();
+          });
         }
       };
 
@@ -557,6 +621,8 @@ export function useWebRTC(): UseWebRTCReturn {
         store.setTransferState('error');
       };
 
+      transferStartTimeRef.current = Date.now();
+      hasRecordedCompletionRef.current = false;
       worker.startSend(file, keys.rawKey, keys.salt);
       store.setTransferState('sending');
     }

@@ -121,5 +121,25 @@
     "update_desc": "Son özellikler ve iyileştirmeler için uygulamayı güncelleyin.",
     "update_now": "Güncelle",
     "dismiss": "Kapat"
+  },
+  "history": {
+    "title": "Transfer Geçmişi",
+    "transfers_count": "transfer",
+    "clear_all": "Tüm Geçmişi Temizle",
+    "clear_btn": "Temizle",
+    "confirm_clear": "Emin misiniz? Sil",
+    "save_history_toggle": "Transfer Geçmişini Kaydet",
+    "saving_disabled_hint": "Geçmiş kaydı kapalı. Sonraki transferleriniz bu cihaza kaydedilmeyecektir.",
+    "tabs": {
+      "all": "Tümü",
+      "sent": "Gönderilenler",
+      "received": "Alınanlar"
+    },
+    "empty_title": "Henüz transfer geçmişi yok",
+    "empty_desc": "Yaptığınız dosya aktarımları sunucuya gönderilmez, yalnızca bu cihazdaki tarayıcınızda listelenir.",
+    "delete_item": "Bu kaydı sil",
+    "role_sent": "Gönderildi",
+    "role_received": "Alındı",
+    "privacy_note": "Tüm transfer kayıtları yalnızca bu cihazdaki IndexedDB'de saklanır. Sunucuda hiçbir kayıt tutulmaz."
   }
 }

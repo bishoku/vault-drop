@@ -1,11 +1,11 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Lock, Globe, Sun, Moon } from 'lucide-react';
+import { Lock, Globe, Sun, Moon, History } from 'lucide-react';
 import { useTransferStore } from '../store';
 
 export const Header: React.FC = () => {
   const { t, i18n } = useTranslation();
-  const { connectionState, theme, toggleTheme } = useTransferStore();
+  const { connectionState, theme, toggleTheme, history, setIsHistoryOpen } = useTransferStore();
 
   const handleLanguageToggle = () => {
     const nextLang = i18n.language === 'tr' ? 'en' : 'tr';
@@ -75,6 +75,21 @@ export const Header: React.FC = () => {
         {renderConnectionStatus()}
 
         <div className="flex items-center gap-1 border-l border-border pl-2 sm:pl-3">
+          <button
+            onClick={() => setIsHistoryOpen(true)}
+            className="relative rounded-xl p-2 text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary"
+            title={t('history.title')}
+            aria-label={t('history.title')}
+          >
+            <History size={18} />
+            {history.length > 0 && (
+              <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
+              </span>
+            )}
+          </button>
+
           <button
             onClick={handleLanguageToggle}
             className="flex items-center gap-1 rounded-xl p-2 text-xs font-bold text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary"

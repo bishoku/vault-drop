@@ -8,6 +8,7 @@ import { ShareCard } from './components/ShareCard';
 import { ProgressBar } from './components/ProgressBar';
 import { FallbackModal } from './components/FallbackModal';
 import { ReloadPrompt } from './components/ReloadPrompt';
+import { TransferHistoryDrawer } from './components/TransferHistoryDrawer';
 import { Zap, ShieldCheck, HardDrive, Download, Loader2, FolderDown } from 'lucide-react';
 import { useEffect } from 'react';
 
@@ -23,6 +24,12 @@ export default function App() {
     canChooseSaveLocation,
   } = useWebRTC();
   const wakeLock = useWakeLock();
+
+  // Load transfer history from IndexedDB on mount
+  useEffect(() => {
+    store.loadHistory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Acquire wake lock during active transfer
   useEffect(() => {
@@ -233,6 +240,9 @@ export default function App() {
         onConfirm={confirmFallback}
         onCancel={cancelTransfer}
       />
+
+      {/* Transfer History Drawer */}
+      <TransferHistoryDrawer />
 
       {/* PWA Update Toast */}
       <ReloadPrompt />

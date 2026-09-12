@@ -121,5 +121,25 @@
     "update_desc": "A new version of VaultDrop is available. Reload to update.",
     "update_now": "Update",
     "dismiss": "Dismiss"
+  },
+  "history": {
+    "title": "Transfer History",
+    "transfers_count": "transfers",
+    "clear_all": "Clear Transfer History",
+    "clear_btn": "Clear",
+    "confirm_clear": "Are you sure? Delete",
+    "save_history_toggle": "Save Transfer History",
+    "saving_disabled_hint": "History recording is disabled. Future transfers will not be stored in IndexedDB.",
+    "tabs": {
+      "all": "All",
+      "sent": "Sent",
+      "received": "Received"
+    },
+    "empty_title": "No transfer history yet",
+    "empty_desc": "Your file transfers are never sent to a server; they are only listed locally within your browser.",
+    "delete_item": "Delete record",
+    "role_sent": "Sent",
+    "role_received": "Received",
+    "privacy_note": "All transfer records are saved locally in this device's IndexedDB. Zero logs on the server."
   }
 }

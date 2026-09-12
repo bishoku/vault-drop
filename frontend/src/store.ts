@@ -1,4 +1,12 @@
 import type { FileManifest } from './core/crypto';
+import {
+  type TransferRecord,
+  getTransferHistory,
+  deleteTransferRecord,
+  clearTransferHistory,
+  isHistorySavingEnabled,
+  setHistorySavingEnabled,
+} from './core/history';
 
 type Theme = 'light' | 'dark';
 type ConnectionState = 'idle' | 'waiting' | 'connecting' | 'p2p' | 'relay' | 'failed';
@@ -62,6 +70,17 @@ interface TransferStore {
   setDownloadUrl: (url: string | null) => void;
   receivedFile: File | Blob | null;
   setReceivedFile: (file: File | Blob | null) => void;
+
+  // History
+  isHistoryOpen: boolean;
+  setIsHistoryOpen: (open: boolean) => void;
+  history: TransferRecord[];
+  setHistory: (history: TransferRecord[]) => void;
+  isHistoryEnabled: boolean;
+  setIsHistoryEnabled: (enabled: boolean) => void;
+  loadHistory: () => Promise<void>;
+  deleteHistoryItem: (id: string) => Promise<void>;
+  clearAllHistory: () => Promise<void>;
 
   // Reset
   reset: () => void;
@@ -146,6 +165,29 @@ export const useTransferStore = create<TransferStore>((set) => {
     receivedFile: null,
     setReceivedFile: (receivedFile) => set({ receivedFile }),
 
+    isHistoryOpen: false,
+    setIsHistoryOpen: (isHistoryOpen) => set({ isHistoryOpen }),
+    history: [],
+    setHistory: (history) => set({ history }),
+    isHistoryEnabled: isHistorySavingEnabled(),
+    setIsHistoryEnabled: (enabled) => {
+      setHistorySavingEnabled(enabled);
+      set({ isHistoryEnabled: enabled });
+    },
+    loadHistory: async () => {
+      const records = await getTransferHistory();
+      set({ history: records });
+    },
+    deleteHistoryItem: async (id) => {
+      await deleteTransferRecord(id);
+      const records = await getTransferHistory();
+      set({ history: records });
+    },
+    clearAllHistory: async () => {
+      await clearTransferHistory();
+      set({ history: [] });
+    },
+
     reset: () =>
       set({
         roomId: null,
@@ -164,4 +206,4 @@ export const useTransferStore = create<TransferStore>((set) => {
   };
 });
 
-export type { TransferStore, TransferProgress, ConnectionState, TransferState, Theme, AppMode };
+export type { TransferStore, TransferProgress, ConnectionState, TransferState, Theme, AppMode, TransferRecord };
