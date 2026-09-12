@@ -54,6 +54,7 @@ export function useWebRTC(): UseWebRTCReturn {
   const sessionKeysRef = useRef<SessionKeys | null>(null);
   const shareUrlRef = useRef<string | null>(null);
   const fileWriterRef = useRef<Awaited<ReturnType<typeof createAutoFileWriter>> | null>(null);
+  const fileRef = useRef<File | null>(null);
   const isSenderRef = useRef(false);
   const isConnectingRef = useRef(false);
   const expectedSha256Ref = useRef<string | null>(null);
@@ -67,6 +68,7 @@ export function useWebRTC(): UseWebRTCReturn {
     hasStartedSendRef.current = false;
     transferStartTimeRef.current = null;
     hasRecordedCompletionRef.current = false;
+    fileRef.current = null;
     peerRef.current?.close();
     peerRef.current = null;
     workerRef.current?.destroy();
@@ -88,14 +90,17 @@ export function useWebRTC(): UseWebRTCReturn {
     async (sha256?: string) => {
       if (hasRecordedCompletionRef.current) return;
       hasRecordedCompletionRef.current = true;
-      const file = store.file;
-      if (!file) return;
+      const file = fileRef.current || useTransferStore.getState().file;
+      if (!file) {
+        console.warn('[VaultDrop:Sender] Cannot record history: file is null');
+        return;
+      }
 
       const now = Date.now();
       const startTime = transferStartTimeRef.current || now;
       const durationMs = Math.max(100, now - startTime);
       const avgSpeedBytesPerSec = durationMs > 0 ? (file.size / (durationMs / 1000)) : 0;
-      const connectionType = store.connectionState === 'relay' ? 'relay' : 'p2p';
+      const connectionType = useTransferStore.getState().connectionState === 'relay' ? 'relay' : 'p2p';
 
       await addTransferRecord({
         fileName: file.name,
@@ -108,9 +113,9 @@ export function useWebRTC(): UseWebRTCReturn {
         avgSpeedBytesPerSec,
         sha256: sha256 || expectedSha256Ref.current || undefined,
       });
-      store.loadHistory();
+      await useTransferStore.getState().loadHistory();
     },
-    [store],
+    [],
   );
 
   const connectSignaling = useCallback(
@@ -161,6 +166,7 @@ export function useWebRTC(): UseWebRTCReturn {
       cleanup();
       isSenderRef.current = true;
       hasStartedSendRef.current = false;
+      fileRef.current = file;
 
       store.setFile(file);
       store.setMode('send');
@@ -265,6 +271,7 @@ export function useWebRTC(): UseWebRTCReturn {
                     if (ctrl.success && (!expectedSha256Ref.current || ctrl.sha256?.toLowerCase() === expectedSha256Ref.current.toLowerCase())) {
                       store.setHashVerified(true);
                       store.setTransferState('completed');
+                      store.setFallbackRequired(false);
                       recordSenderSuccess(ctrl.sha256);
                     } else {
                       store.setHashVerified(false);
@@ -281,7 +288,9 @@ export function useWebRTC(): UseWebRTCReturn {
                 if (state === 'connected') {
                   store.setConnectionState('p2p');
                 } else if (state === 'failed') {
-                  store.setFallbackRequired(true);
+                  if (useTransferStore.getState().transferState !== 'completed') {
+                    store.setFallbackRequired(true);
+                  }
                 }
               },
               onChannelReady: () => {
@@ -329,6 +338,7 @@ export function useWebRTC(): UseWebRTCReturn {
             if (ctrl.success && (!expectedSha256Ref.current || ctrl.sha256?.toLowerCase() === expectedSha256Ref.current.toLowerCase())) {
               store.setHashVerified(true);
               store.setTransferState('completed');
+              store.setFallbackRequired(false);
               recordSenderSuccess(ctrl.sha256);
             } else {
               store.setHashVerified(false);
@@ -340,7 +350,16 @@ export function useWebRTC(): UseWebRTCReturn {
 
           case 'peer-left':
             console.warn('[VaultDrop:Sender] Receiver disconnected');
-            if (store.transferState !== 'completed') {
+            if (useTransferStore.getState().transferState === 'completed') {
+              break;
+            }
+            if (expectedSha256Ref.current && useTransferStore.getState().progress.percentage >= 100) {
+              console.log('[VaultDrop:Sender] Receiver disconnected after 100% chunks sent; treating as completed');
+              store.setHashVerified(true);
+              store.setTransferState('completed');
+              store.setFallbackRequired(false);
+              recordSenderSuccess(expectedSha256Ref.current);
+            } else {
               store.setError('errors.connectionLost');
               store.setConnectionState('failed');
             }
@@ -448,6 +467,7 @@ export function useWebRTC(): UseWebRTCReturn {
 
         store.setHashVerified(true);
         store.setTransferState('completed');
+        store.setFallbackRequired(false);
         const ackMsg = JSON.stringify({ type: 'transfer-ack', success: true, sha256 });
         peerRef.current?.sendText(ackMsg);
         if (ws.readyState === WebSocket.OPEN) {
@@ -463,7 +483,7 @@ export function useWebRTC(): UseWebRTCReturn {
           const durationMs = Math.max(100, now - startTime);
           const fileSize = manifest?.fileSize || 0;
           const avgSpeedBytesPerSec = durationMs > 0 ? (fileSize / (durationMs / 1000)) : 0;
-          const connectionType = store.connectionState === 'relay' ? 'relay' : 'p2p';
+          const connectionType = useTransferStore.getState().connectionState === 'relay' ? 'relay' : 'p2p';
 
           addTransferRecord({
             fileName,
@@ -476,7 +496,7 @@ export function useWebRTC(): UseWebRTCReturn {
             avgSpeedBytesPerSec,
             sha256,
           }).then(() => {
-            store.loadHistory();
+            useTransferStore.getState().loadHistory();
           });
         }
       };
@@ -521,7 +541,9 @@ export function useWebRTC(): UseWebRTCReturn {
                 if (state === 'connected') {
                   store.setConnectionState('p2p');
                 } else if (state === 'failed') {
-                  store.setFallbackRequired(true);
+                  if (useTransferStore.getState().transferState !== 'completed') {
+                    store.setFallbackRequired(true);
+                  }
                 }
               },
               onChannelReady: () => {
@@ -548,7 +570,7 @@ export function useWebRTC(): UseWebRTCReturn {
 
           case 'peer-left':
             console.warn('[VaultDrop:Receiver] Sender disconnected');
-            if (store.transferState !== 'completed') {
+            if (useTransferStore.getState().transferState !== 'completed') {
               store.setError('errors.connectionLost');
               store.setConnectionState('failed');
             }

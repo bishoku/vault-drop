@@ -95,20 +95,24 @@ export const DropZone: React.FC<DropZoneProps> = ({ onSendFile }) => {
             </div>
 
             <h3 className="mb-1.5 sm:mb-2 text-lg sm:text-xl font-bold text-text-primary tracking-tight">
-              {t('dropzone.title')}
+              <span className="hidden sm:inline">{t('dropzone.title')}</span>
+              <span className="inline sm:hidden">{t('dropzone.title_mobile')}</span>
             </h3>
 
             <p className="mb-4 sm:mb-5 text-xs sm:text-sm font-medium text-text-secondary">
-              {t('dropzone.subtitle')}
+              <span className="hidden sm:inline">{t('dropzone.subtitle')}</span>
+              <span className="inline sm:hidden">{t('dropzone.subtitle_mobile')}</span>
             </p>
 
-            <div className="flex items-center gap-2 rounded-xl bg-surface px-3.5 py-2 text-xs font-semibold text-accent shadow-xs border border-border">
-              <FolderPlus size={15} />
-              <span>{t('dropzone.browse')}</span>
+            <div className="flex items-center gap-2 rounded-xl bg-surface px-4 py-2 text-xs sm:text-sm font-semibold text-accent shadow-xs border border-border group-active:scale-95 transition-transform">
+              <FolderPlus size={16} />
+              <span className="hidden sm:inline">{t('dropzone.browse')}</span>
+              <span className="inline sm:hidden">{t('dropzone.browse_mobile')}</span>
             </div>
 
             <span className="mt-4 sm:mt-5 text-[11px] sm:text-xs text-text-tertiary">
-              {t('dropzone.hint')}
+              <span className="hidden sm:inline">{t('dropzone.hint')}</span>
+              <span className="inline sm:hidden">{t('dropzone.hint_mobile')}</span>
             </span>
           </div>
         ) : (

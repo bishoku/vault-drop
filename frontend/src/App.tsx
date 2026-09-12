@@ -236,7 +236,7 @@ export default function App() {
 
       {/* Fallback Modal */}
       <FallbackModal
-        isOpen={store.isFallbackRequired}
+        isOpen={store.isFallbackRequired && store.transferState !== 'completed'}
         onConfirm={confirmFallback}
         onCancel={cancelTransfer}
       />

@@ -35,9 +35,13 @@
   },
   "dropzone": {
     "title": "Dosyanızı sürükleyip bırakın",
+    "title_mobile": "Paylaşmak için dosya seçin",
     "subtitle": "veya bilgisayarınızdan seçmek için tıklayın",
+    "subtitle_mobile": "Fotoğraf, video veya belge seçmek için dokunun",
     "browse": "Dosya Seç",
+    "browse_mobile": "Cihazdan Dosya Seç",
     "hint": "Tüm dosya formatları desteklenir • 10 GB+ akış desteği",
+    "hint_mobile": "Boyut sınırı yok • 10 GB+ akış desteği",
     "selected": "Dosya seçildi",
     "size": "Boyut",
     "change": "Değiştir",

@@ -35,9 +35,13 @@
   },
   "dropzone": {
     "title": "Drag and drop your file here",
+    "title_mobile": "Select a file to share",
     "subtitle": "or click to select from your device",
+    "subtitle_mobile": "Tap to select photos, videos, or documents",
     "browse": "Browse File",
+    "browse_mobile": "Select from Device",
     "hint": "All file formats supported • 10 GB+ stream support",
+    "hint_mobile": "No size limits • 10 GB+ stream support",
     "selected": "File selected",
     "size": "Size",
     "change": "Change",
