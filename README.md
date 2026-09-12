@@ -2,6 +2,9 @@
 
 **Zero-knowledge, peer-to-peer, end-to-end encrypted file transfer.** No sign-up, no server storage, no tracking. Stream 10 GB+ files directly between browsers with **< 30 MB RAM usage**.
 
+🚀 **Live Application:** [https://bishoku.github.io/vault-drop/](https://bishoku.github.io/vault-drop/)
+
+[![Live Demo](https://img.shields.io/badge/Live_App-bishoku.github.io%2Fvault--drop-10b981?style=for-the-badge&logo=firefox-browser&logoColor=white)](https://bishoku.github.io/vault-drop/)
 [![Deploy to GitHub Pages](https://github.com/bishoku/vault-drop/actions/workflows/deploy.yml/badge.svg)](https://github.com/bishoku/vault-drop/actions/workflows/deploy.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![React: 19](https://img.shields.io/badge/React-19-61dafb.svg)](https://react.dev/)
@@ -20,7 +23,7 @@
   - **File System Access API (FSA)**: Optional direct-to-folder save on desktop Chromium (Chrome/Edge/Brave/Opera).
 - 🌊 **Hardware-Level WebRTC Backpressure** — Dynamic high/low watermark flow control (`HIGH_WATERMARK = 2 MB`, `LOW_WATERMARK = 512 KB`) that throttles Web Workers when network buffers fill up.
 - 🛡️ **Guaranteed P2P with Explicit Relay Fallback** — Transfer runs 100% P2P over WebRTC DataChannel by default. If strict NAT/firewalls prevent P2P, a modal prompts the user before switching to encrypted Cloudflare WebSocket tunnel fallback.
-- 📱 **Mobile & PWA Ready** — Service worker caching, Screen Wake Lock API (keeps transfers alive when screen dims), Web Share Target, and responsive dark/light mode.
+- 📱 **Mobile & PWA Ready** — Service worker auto-update toast notifications, native "Save to Photos / Gallery" export (`navigator.share`), Screen Wake Lock API (keeps transfers alive when screen dims), Web Share Target, and responsive dark/light mode.
 - 🌍 **Bilingual** — Turkish (Türkçe) and English with automatic language detection.
 
 ---
