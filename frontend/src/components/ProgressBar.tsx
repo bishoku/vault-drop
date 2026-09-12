@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, X, ShieldCheck, ArrowRight, Download, HardDrive } from 'lucide-react';
+import { Check, X, ShieldCheck, ArrowRight, Download, HardDrive, Share2, Image as ImageIcon } from 'lucide-react';
 import { useTransferStore } from '../store';
 import { formatFileSize } from './DropZone';
 
@@ -32,11 +32,54 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({ onCancel, onReset }) =
   const fileManifest = useTransferStore((s) => s.fileManifest);
   const hashVerified = useTransferStore((s) => s.hashVerified);
   const downloadUrl = useTransferStore((s) => s.downloadUrl);
+  const receivedFile = useTransferStore((s) => s.receivedFile);
 
-  if (transferState === 'idle') return null;
+  const [canNativeShare, setCanNativeShare] = useState(false);
 
   const fileName = file?.name || fileManifest?.fileName || t('progress.unknown_file');
   const isCompleted = transferState === 'completed';
+
+  const isImageOrVideo = Boolean(
+    receivedFile &&
+      (receivedFile.type?.startsWith('image/') ||
+        receivedFile.type?.startsWith('video/') ||
+        /\.(jpe?g|png|gif|webp|heic|mp4|mov|webm|avif)$/i.test(fileName)),
+  );
+
+  useEffect(() => {
+    if (!receivedFile || typeof navigator === 'undefined' || !navigator.canShare) {
+      setCanNativeShare(false);
+      return;
+    }
+
+    try {
+      const fileObj =
+        receivedFile instanceof File
+          ? receivedFile
+          : new File([receivedFile], fileName, { type: receivedFile.type || 'application/octet-stream' });
+      setCanNativeShare(navigator.canShare({ files: [fileObj] }));
+    } catch {
+      setCanNativeShare(false);
+    }
+  }, [receivedFile, fileName]);
+
+  const handleNativeShare = async () => {
+    if (!receivedFile || typeof navigator === 'undefined' || !navigator.share) return;
+    try {
+      const fileObj =
+        receivedFile instanceof File
+          ? receivedFile
+          : new File([receivedFile], fileName, { type: receivedFile.type || 'application/octet-stream' });
+      await navigator.share({
+        files: [fileObj],
+        title: fileName,
+      });
+    } catch (err) {
+      if ((err as Error)?.name !== 'AbortError') {
+        console.warn('[ProgressBar] navigator.share error:', err);
+      }
+    }
+  };
 
   if (isCompleted) {
     return (
@@ -71,23 +114,35 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({ onCancel, onReset }) =
         </div>
 
         <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
+          {canNativeShare && (
+            <button
+              type="button"
+              onClick={handleNativeShare}
+              className="inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 font-bold text-accent-text text-sm shadow-md transition-all hover:bg-accent-hover active:scale-95 cursor-pointer"
+            >
+              {isImageOrVideo ? <ImageIcon size={16} /> : <Share2 size={16} />}
+              <span>{isImageOrVideo ? t('progress.save_to_gallery') : t('progress.share_file')}</span>
+            </button>
+          )}
+
           {downloadUrl && (
             <a
               href={downloadUrl}
               download={fileName}
-              className="inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 font-bold text-accent-text text-sm shadow-md transition-all hover:bg-accent-hover active:scale-95"
+              className={`inline-flex items-center gap-2 rounded-xl ${
+                canNativeShare
+                  ? 'border border-border bg-surface-alt px-5 py-2.5 font-semibold text-text-primary text-sm hover:bg-border'
+                  : 'bg-accent px-5 py-2.5 font-bold text-accent-text text-sm shadow-md hover:bg-accent-hover'
+              } transition-all active:scale-95`}
             >
               <Download size={16} />
               <span>{t('progress.download_file')}</span>
             </a>
           )}
+
           <button
             onClick={onReset}
-            className={`inline-flex items-center gap-2 rounded-xl ${
-              downloadUrl
-                ? 'border border-border bg-surface-alt px-5 py-2.5 font-semibold text-text-primary text-sm hover:bg-border'
-                : 'bg-accent px-6 py-3 font-bold text-accent-text text-sm shadow-md hover:bg-accent-hover'
-            } transition-all active:scale-95`}
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-surface-alt px-5 py-2.5 font-semibold text-text-primary text-sm hover:bg-border transition-all active:scale-95 cursor-pointer"
           >
             <span>{t('progress.transfer_another')}</span>
             <ArrowRight size={16} />

@@ -17,6 +17,7 @@ import {
   buildShareURL,
   bytesToHex,
   type SessionKeys,
+  type FileManifest,
 } from '../core/crypto';
 
 const DEFAULT_PROD_SIGNALING_URL = 'wss://vaultdrop-signaling.barishoku.workers.dev';
@@ -56,6 +57,7 @@ export function useWebRTC(): UseWebRTCReturn {
   const isConnectingRef = useRef(false);
   const expectedSha256Ref = useRef<string | null>(null);
   const hasStartedSendRef = useRef(false);
+  const manifestRef = useRef<FileManifest | null>(null);
 
   const cleanup = useCallback(() => {
     isConnectingRef.current = false;
@@ -74,6 +76,7 @@ export function useWebRTC(): UseWebRTCReturn {
     sessionKeysRef.current = null;
     fileWriterRef.current = null;
     expectedSha256Ref.current = null;
+    manifestRef.current = null;
   }, []);
 
   const connectSignaling = useCallback(
@@ -344,6 +347,7 @@ export function useWebRTC(): UseWebRTCReturn {
 
       worker.onManifest = async (manifest) => {
         console.log('[VaultDrop:Receiver] Manifest received:', manifest.fileName, `(${manifest.fileSize} bytes, ${manifest.totalChunks} chunks)`);
+        manifestRef.current = manifest;
         store.setFileManifest(manifest);
         store.setTransferState('receiving');
 
@@ -381,19 +385,20 @@ export function useWebRTC(): UseWebRTCReturn {
 
       worker.onComplete = async (sha256) => {
         console.log('[VaultDrop:Receiver] File stream complete. Verified SHA-256:', sha256);
-        const manifest = store.fileManifest;
+        const manifest = manifestRef.current || useTransferStore.getState().fileManifest;
+        const fileName = manifest?.fileName || 'download';
 
         // Finalize saving file to disk
         if (fileWriterRef.current) {
           try {
             const savedFile = await fileWriterRef.current.close();
             if (savedFile) {
-              const fileName = manifest?.fileName || 'download';
+              store.setReceivedFile(savedFile);
               const blobUrl = triggerBlobDownload(savedFile, fileName);
               store.setDownloadUrl(blobUrl);
-              console.log('[VaultDrop:Receiver] File assembled on disk and download triggered');
+              console.log('[VaultDrop:Receiver] File assembled on disk and download triggered:', fileName);
             } else {
-              console.log('[VaultDrop:Receiver] File saved directly to user selected disk location (FSA)');
+              console.log('[VaultDrop:Receiver] File saved directly to user selected disk location (FSA):', fileName);
             }
           } catch (err) {
             console.error('[VaultDrop:Receiver] Save error on close:', err);
@@ -495,12 +500,12 @@ export function useWebRTC(): UseWebRTCReturn {
   }, [cleanup, connectSignaling, store]);
 
   const chooseSaveLocation = useCallback(async () => {
-    const manifest = store.fileManifest;
-    if (!manifest) return;
+    const manifest = manifestRef.current || store.fileManifest;
+    const suggestedName = manifest?.fileName || 'download';
     try {
-      const writer = await createFSAFileWriter(manifest.fileName);
+      const writer = await createFSAFileWriter(suggestedName);
       fileWriterRef.current = writer;
-      console.log('[VaultDrop:Receiver] User picked save location via File System Access API');
+      console.log('[VaultDrop:Receiver] User picked save location via File System Access API:', suggestedName);
     } catch (err) {
       console.warn('[VaultDrop:Receiver] User dismissed save file picker:', err);
     }

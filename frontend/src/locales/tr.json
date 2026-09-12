@@ -66,6 +66,8 @@
     "verify_error": "Bütünlük doğrulaması başarısız!",
     "unknown_file": "Bilinmeyen Dosya",
     "download_file": "Dosyayı İndir",
+    "save_to_gallery": "Galeriye Kaydet",
+    "share_file": "Dosyayı Paylaş",
     "transfer_another": "Başka Bir Dosya Aktar",
     "streaming_to_disk": "Doğrudan diske yazılıyor (RAM < 30MB)",
     "cancel": "İptal Et"
@@ -113,5 +115,11 @@
     "close": "Kapat",
     "retry": "Tekrar Dene",
     "cancel": "İptal"
+  },
+  "pwa": {
+    "update_available": "Yeni bir sürüm mevcut!",
+    "update_desc": "Son özellikler ve iyileştirmeler için uygulamayı güncelleyin.",
+    "update_now": "Güncelle",
+    "dismiss": "Kapat"
   }
 }

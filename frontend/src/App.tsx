@@ -7,6 +7,7 @@ import { DropZone } from './components/DropZone';
 import { ShareCard } from './components/ShareCard';
 import { ProgressBar } from './components/ProgressBar';
 import { FallbackModal } from './components/FallbackModal';
+import { ReloadPrompt } from './components/ReloadPrompt';
 import { Zap, ShieldCheck, HardDrive, Download, Loader2, FolderDown } from 'lucide-react';
 import { useEffect } from 'react';
 
@@ -232,6 +233,9 @@ export default function App() {
         onConfirm={confirmFallback}
         onCancel={cancelTransfer}
       />
+
+      {/* PWA Update Toast */}
+      <ReloadPrompt />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Shield, Lock, Globe, Sun, Moon } from 'lucide-react';
+import { Lock, Globe, Sun, Moon } from 'lucide-react';
 import { useTransferStore } from '../store';
 
 export const Header: React.FC = () => {
@@ -8,7 +8,7 @@ export const Header: React.FC = () => {
   const { connectionState, theme, toggleTheme } = useTransferStore();
 
   const handleLanguageToggle = () => {
-    const nextLang = i18n.language?.startsWith('tr') ? 'en' : 'tr';
+    const nextLang = i18n.language === 'tr' ? 'en' : 'tr';
     i18n.changeLanguage(nextLang);
   };
 
@@ -52,9 +52,13 @@ export const Header: React.FC = () => {
       {/* Brand & E2EE badge */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-white shadow-sm shadow-accent/30">
-            <Shield size={20} strokeWidth={2.5} />
-          </div>
+          <img
+            src="./logo-128x128.png"
+            alt="VaultDrop Logo"
+            className="h-9 w-9 rounded-xl object-cover shadow-sm ring-1 ring-border/50"
+            width={36}
+            height={36}
+          />
           <span className="text-xl font-black tracking-tight text-text-primary">
             VaultDrop
           </span>

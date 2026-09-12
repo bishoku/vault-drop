@@ -66,6 +66,8 @@
     "verify_error": "File integrity verification failed!",
     "unknown_file": "Unknown File",
     "download_file": "Download File",
+    "save_to_gallery": "Save to Photos",
+    "share_file": "Share File",
     "transfer_another": "Transfer Another File",
     "streaming_to_disk": "Streaming directly to disk (RAM < 30MB)",
     "cancel": "Cancel"
@@ -113,5 +115,11 @@
     "close": "Close",
     "retry": "Retry",
     "cancel": "Cancel"
+  },
+  "pwa": {
+    "update_available": "Update Available!",
+    "update_desc": "A new version of VaultDrop is available. Reload to update.",
+    "update_now": "Update",
+    "dismiss": "Dismiss"
   }
 }

@@ -57,9 +57,11 @@ interface TransferStore {
   hashVerified: boolean | null;
   setHashVerified: (verified: boolean | null) => void;
 
-  // Download URL (for receiver manual re-download)
+  // Download URL & Received File (for receiver)
   downloadUrl: string | null;
   setDownloadUrl: (url: string | null) => void;
+  receivedFile: File | Blob | null;
+  setReceivedFile: (file: File | Blob | null) => void;
 
   // Reset
   reset: () => void;
@@ -141,6 +143,8 @@ export const useTransferStore = create<TransferStore>((set) => {
 
     downloadUrl: null,
     setDownloadUrl: (downloadUrl) => set({ downloadUrl }),
+    receivedFile: null,
+    setReceivedFile: (receivedFile) => set({ receivedFile }),
 
     reset: () =>
       set({
@@ -155,6 +159,7 @@ export const useTransferStore = create<TransferStore>((set) => {
         error: null,
         hashVerified: null,
         downloadUrl: null,
+        receivedFile: null,
       }),
   };
 });
