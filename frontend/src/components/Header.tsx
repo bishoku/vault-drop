@@ -5,7 +5,11 @@ import { useTransferStore } from '../store';
 
 export const Header: React.FC = () => {
   const { t, i18n } = useTranslation();
-  const { connectionState, theme, toggleTheme, history, setIsHistoryOpen } = useTransferStore();
+  const connectionState = useTransferStore((s) => s.connectionState);
+  const theme = useTransferStore((s) => s.theme);
+  const toggleTheme = useTransferStore((s) => s.toggleTheme);
+  const hasHistory = useTransferStore((s) => s.history.length > 0);
+  const setIsHistoryOpen = useTransferStore((s) => s.setIsHistoryOpen);
 
   const handleLanguageToggle = () => {
     const nextLang = i18n.language === 'tr' ? 'en' : 'tr';
@@ -98,7 +102,7 @@ export const Header: React.FC = () => {
             aria-label={t('history.title')}
           >
             <History size={17} className="sm:w-[18px] sm:h-[18px]" />
-            {history.length > 0 && (
+            {hasHistory && (
               <span className="absolute top-1 right-1 flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />

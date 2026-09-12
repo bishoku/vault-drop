@@ -14,7 +14,15 @@ import { useEffect } from 'react';
 
 export default function App() {
   const { t } = useTranslation();
-  const store = useTransferStore();
+  const mode = useTransferStore((s) => s.mode);
+  const roomId = useTransferStore((s) => s.roomId);
+  const connectionState = useTransferStore((s) => s.connectionState);
+  const transferState = useTransferStore((s) => s.transferState);
+  const error = useTransferStore((s) => s.error);
+  const isFallbackRequired = useTransferStore((s) => s.isFallbackRequired);
+  const loadHistory = useTransferStore((s) => s.loadHistory);
+  const setError = useTransferStore((s) => s.setError);
+
   const {
     startSending,
     confirmFallback,
@@ -27,24 +35,24 @@ export default function App() {
 
   // Load transfer history from IndexedDB on mount
   useEffect(() => {
-    store.loadHistory();
+    loadHistory();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadHistory]);
 
   // Acquire wake lock during active transfer
   useEffect(() => {
-    if (store.transferState === 'sending' || store.transferState === 'receiving') {
+    if (transferState === 'sending' || transferState === 'receiving') {
       wakeLock.request();
     } else {
       wakeLock.release();
     }
-  }, [store.transferState, wakeLock]);
+  }, [transferState, wakeLock]);
 
   const handleSendFile = async (file: File) => {
     try {
       await startSending(file);
     } catch {
-      store.setError('errors.transferFailed');
+      setError('errors.transferFailed');
     }
   };
 
@@ -55,12 +63,12 @@ export default function App() {
     }
   };
 
-  const isSenderIdle = store.mode === 'send' && store.connectionState === 'idle' && store.transferState === 'idle';
+  const isSenderIdle = mode === 'send' && connectionState === 'idle' && transferState === 'idle';
   const isWaitingForReceiver =
-    store.mode === 'send' && (store.connectionState === 'waiting' || store.connectionState === 'connecting');
+    mode === 'send' && (connectionState === 'waiting' || connectionState === 'connecting');
   const isTransferring =
-    store.transferState === 'sending' || store.transferState === 'receiving';
-  const isCompleted = store.transferState === 'completed';
+    transferState === 'sending' || transferState === 'receiving';
+  const isCompleted = transferState === 'completed';
 
   const showDropZone = isSenderIdle;
   const showShareCard = isWaitingForReceiver && shareUrl;
@@ -68,9 +76,9 @@ export default function App() {
 
   // Receiver waiting state: receiver has joined the room and is waiting for transfer to start
   const isReceiverWaiting =
-    store.mode === 'receive' &&
-    store.transferState === 'idle' &&
-    !store.error;
+    mode === 'receive' &&
+    transferState === 'idle' &&
+    !error;
 
   return (
     <div className="flex min-h-dvh flex-col bg-bg text-text-primary">
@@ -149,10 +157,8 @@ export default function App() {
         {showShareCard && (
           <ShareCard
             shareUrl={shareUrl}
-            roomId={store.roomId ?? ''}
-            isReceiverConnected={
-              store.connectionState === 'connecting' || store.connectionState === 'p2p'
-            }
+            roomId={roomId ?? ''}
+            isReceiverConnected={connectionState === 'connecting'}
           />
         )}
 
@@ -160,7 +166,7 @@ export default function App() {
         {isReceiverWaiting && (
           <div className="flex w-full flex-col items-center gap-4 sm:gap-5 rounded-3xl border border-border bg-surface p-6 sm:p-10 text-center shadow-lg">
             <div className="flex h-13 w-13 sm:h-16 sm:w-16 items-center justify-center rounded-2xl bg-accent/10 text-accent">
-              {store.connectionState === 'p2p' ? (
+              {connectionState === 'p2p' ? (
                 <Download size={28} className="animate-bounce sm:w-8 sm:h-8" />
               ) : (
                 <Loader2 size={28} className="animate-spin sm:w-8 sm:h-8" />
@@ -169,12 +175,12 @@ export default function App() {
 
             <div>
               <h3 className="text-lg sm:text-xl font-bold text-text-primary">
-                {store.connectionState === 'p2p'
+                {connectionState === 'p2p'
                   ? t('receive.connected_waiting')
                   : t('header.connection.connecting')}
               </h3>
               <p className="mt-1 text-xs sm:text-sm text-text-secondary">
-                {store.connectionState === 'p2p'
+                {connectionState === 'p2p'
                   ? t('receive.sender_preparing')
                   : t('receive.establishing')}
               </p>
@@ -183,13 +189,13 @@ export default function App() {
             <div className="flex items-center gap-2 rounded-full border border-border bg-surface-alt px-3.5 py-1 text-xs font-semibold text-text-secondary">
               <span
                 className={`h-2 w-2 rounded-full ${
-                  store.connectionState === 'p2p'
+                  connectionState === 'p2p'
                     ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.7)]'
                     : 'bg-blue-500 animate-pulse'
                 }`}
               />
               <span>
-                {store.connectionState === 'p2p'
+                {connectionState === 'p2p'
                   ? t('header.connection.p2p')
                   : t('header.connection.connecting')}
               </span>
@@ -212,9 +218,9 @@ export default function App() {
         {showProgress && <ProgressBar onCancel={cancelTransfer} onReset={handleReset} />}
 
         {/* Error display */}
-        {store.error && !isCompleted && (
+        {error && !isCompleted && (
           <div className="w-full rounded-2xl border border-danger/20 bg-danger-light p-4 text-center text-danger">
-            <p className="font-semibold text-sm">{t(store.error)}</p>
+            <p className="font-semibold text-sm">{t(error)}</p>
             <button
               onClick={handleReset}
               className="mt-3 rounded-xl bg-danger px-4 py-2 font-semibold text-xs text-white transition-opacity hover:opacity-90"
@@ -249,7 +255,7 @@ export default function App() {
 
       {/* Fallback Modal */}
       <FallbackModal
-        isOpen={store.isFallbackRequired && store.transferState !== 'completed'}
+        isOpen={isFallbackRequired && transferState !== 'completed'}
         onConfirm={confirmFallback}
         onCancel={cancelTransfer}
       />

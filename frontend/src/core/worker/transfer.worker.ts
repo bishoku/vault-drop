@@ -40,6 +40,8 @@ interface ReceiverContext {
   receivedChunks: number;
   receivedBytes: number;
   startTime: number;
+  lastProgressTime: number;
+  lastProgressPercent: number;
   pendingFileChunks: Map<number, ArrayBuffer>;
 }
 
@@ -135,6 +137,8 @@ async function handleSend(file: File, rawKey: Uint8Array, salt: Uint8Array) {
   let offset = 0;
   let chunkIndex = 1;
   const startTime = Date.now();
+  let lastProgressTime = 0;
+  let lastProgressPercent = -1;
 
   while (offset < file.size && !aborted) {
     if (isBackpressurePaused) {
@@ -161,13 +165,19 @@ async function handleSend(file: File, rawKey: Uint8Array, salt: Uint8Array) {
     offset = end;
     chunkIndex++;
 
-    const elapsed = (Date.now() - startTime) / 1000;
-    const speed = elapsed > 0 ? offset / elapsed : 0;
-    post({ type: 'progress', sent: offset, total: file.size, speed });
+    const currentPercent = file.size > 0 ? Math.floor((offset / file.size) * 100) : 0;
+    const now = Date.now();
+    if (isLastChunk || now - lastProgressTime >= 100 || currentPercent !== lastProgressPercent) {
+      lastProgressTime = now;
+      lastProgressPercent = currentPercent;
+      const elapsed = (now - startTime) / 1000;
+      const speed = elapsed > 0 ? offset / elapsed : 0;
+      post({ type: 'progress', sent: offset, total: file.size, speed });
+    }
 
-    // Yield to event loop periodically
-    if (chunkIndex % 8 === 0) {
-      await new Promise((resolve) => setTimeout(resolve, 1));
+    // Cooperative yield: yield to worker event loop every 16 chunks (2MB) without artificial timer clamp
+    if (chunkIndex % 16 === 0) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
     }
   }
 
@@ -198,6 +208,8 @@ async function handleReceive(rawKey: Uint8Array) {
     receivedChunks: 0,
     receivedBytes: 0,
     startTime: Date.now(),
+    lastProgressTime: 0,
+    lastProgressPercent: -1,
     pendingFileChunks: new Map(),
   };
 
@@ -309,18 +321,24 @@ async function processFileChunk(chunkIndex: number, data: ArrayBuffer) {
     receiverCtx.receivedChunks++;
 
     // Immediately post decrypted chunk to main thread for disk streaming
-    // Transfer buffer to avoid any memory retention in worker
-    const copy = new Uint8Array(decrypted);
-    post({ type: 'decrypted-chunk', data: copy, chunkIndex }, [copy.buffer as ArrayBuffer]);
+    // Transfer buffer directly to avoid any extra allocation or memory retention in worker
+    post({ type: 'decrypted-chunk', data: decrypted, chunkIndex }, [decrypted.buffer as ArrayBuffer]);
 
-    const elapsed = (Date.now() - receiverCtx.startTime) / 1000;
-    const speed = elapsed > 0 ? receiverCtx.receivedBytes / elapsed : 0;
-    post({
-      type: 'progress',
-      sent: receiverCtx.receivedBytes,
-      total: receiverCtx.manifest.fileSize,
-      speed,
-    });
+    const total = receiverCtx.manifest.fileSize;
+    const currentPercent = total > 0 ? Math.floor((receiverCtx.receivedBytes / total) * 100) : 0;
+    const now = Date.now();
+    if (isLastChunk || now - receiverCtx.lastProgressTime >= 100 || currentPercent !== receiverCtx.lastProgressPercent) {
+      receiverCtx.lastProgressTime = now;
+      receiverCtx.lastProgressPercent = currentPercent;
+      const elapsed = (now - receiverCtx.startTime) / 1000;
+      const speed = elapsed > 0 ? receiverCtx.receivedBytes / elapsed : 0;
+      post({
+        type: 'progress',
+        sent: receiverCtx.receivedBytes,
+        total,
+        speed,
+      });
+    }
   } catch (err) {
     console.error(`[TransferWorker:Recv] Decryption failed for chunk ${chunkIndex}:`, err);
     post({ type: 'error', message: `Decryption error on chunk ${chunkIndex}` });
