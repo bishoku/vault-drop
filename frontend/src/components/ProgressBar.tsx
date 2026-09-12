@@ -2,22 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, X, ShieldCheck, ArrowRight, Download, HardDrive, Share2, Image as ImageIcon } from 'lucide-react';
 import { useTransferStore } from '../store';
-import { formatFileSize } from './DropZone';
-
-export const formatSpeed = (bytesPerSec: number): string => {
-  return `${formatFileSize(bytesPerSec)}/s`;
-};
-
-export const formatETA = (seconds: number): string => {
-  if (seconds < 1) return '< 1s';
-  if (seconds === Infinity || isNaN(seconds)) return '--';
-
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-
-  if (m > 0) return `${m}m ${s}s`;
-  return `${s}s`;
-};
+import { formatSpeed, formatETA } from '../utils/formatters';
+export { formatSpeed, formatETA };
 
 interface ProgressBarProps {
   onCancel: () => void;

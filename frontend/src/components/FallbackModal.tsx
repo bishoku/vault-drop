@@ -100,3 +100,5 @@ export const FallbackModal: React.FC<FallbackModalProps> = ({ isOpen, onConfirm,
     </dialog>
   );
 };
+
+export default FallbackModal;

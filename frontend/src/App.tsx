@@ -1,3 +1,4 @@
+import { lazy, Suspense, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTransferStore } from './store';
 import { useWebRTC } from './hooks/useWebRTC';
@@ -6,11 +7,11 @@ import { Header } from './components/Header';
 import { DropZone } from './components/DropZone';
 import { ShareCard } from './components/ShareCard';
 import { ProgressBar } from './components/ProgressBar';
-import { FallbackModal } from './components/FallbackModal';
 import { ReloadPrompt } from './components/ReloadPrompt';
-import { TransferHistoryDrawer } from './components/TransferHistoryDrawer';
-import { Zap, ShieldCheck, HardDrive, Download, Loader2, FolderDown } from 'lucide-react';
-import { useEffect } from 'react';
+import { Download, Loader2, FolderDown, Zap, ShieldCheck, HardDrive } from 'lucide-react';
+
+const FallbackModal = lazy(() => import('./components/FallbackModal'));
+const TransferHistoryDrawer = lazy(() => import('./components/TransferHistoryDrawer'));
 
 export default function App() {
   const { t } = useTranslation();
@@ -254,14 +255,20 @@ export default function App() {
       </footer>
 
       {/* Fallback Modal */}
-      <FallbackModal
-        isOpen={isFallbackRequired && transferState !== 'completed'}
-        onConfirm={confirmFallback}
-        onCancel={cancelTransfer}
-      />
+      {isFallbackRequired && transferState !== 'completed' && (
+        <Suspense fallback={null}>
+          <FallbackModal
+            isOpen={true}
+            onConfirm={confirmFallback}
+            onCancel={cancelTransfer}
+          />
+        </Suspense>
+      )}
 
       {/* Transfer History Drawer */}
-      <TransferHistoryDrawer />
+      <Suspense fallback={null}>
+        <TransferHistoryDrawer />
+      </Suspense>
 
       {/* PWA Update Toast */}
       <ReloadPrompt />
