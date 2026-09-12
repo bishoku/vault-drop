@@ -23,7 +23,12 @@ export const ReloadPrompt: React.FC = () => {
     <aside
       role="region"
       aria-label={t('pwa.update_available')}
-      className="fixed bottom-4 right-4 z-50 max-w-sm w-[calc(100vw-2rem)] rounded-2xl border border-border/80 bg-surface/95 p-4 shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-5 duration-300"
+      style={{
+        bottom: 'max(1rem, env(safe-area-inset-bottom, 0px))',
+        right: 'max(1rem, env(safe-area-inset-right, 0px))',
+        left: 'max(1rem, env(safe-area-inset-left, 0px))',
+      }}
+      className="fixed z-50 max-w-sm ml-auto rounded-2xl border border-border/80 bg-surface/95 p-4 shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-5 duration-300"
     >
       <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">

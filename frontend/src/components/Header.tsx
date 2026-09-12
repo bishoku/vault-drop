@@ -57,7 +57,14 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 flex items-center justify-between gap-2 border-b border-border/70 bg-surface/85 px-3 py-2.5 sm:px-8 sm:py-3.5 backdrop-blur-xl">
+    <header
+      style={{
+        paddingTop: 'max(0.625rem, env(safe-area-inset-top, 0px))',
+        paddingLeft: 'max(0.75rem, env(safe-area-inset-left, 0px))',
+        paddingRight: 'max(0.75rem, env(safe-area-inset-right, 0px))',
+      }}
+      className="sticky top-0 z-50 flex items-center justify-between gap-2 border-b border-border/70 bg-surface/85 pb-2.5 sm:px-8 sm:py-3.5 backdrop-blur-xl"
+    >
       {/* Brand & E2EE badge */}
       <div className="flex items-center gap-2 sm:gap-3 shrink-0 min-w-0">
         <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">

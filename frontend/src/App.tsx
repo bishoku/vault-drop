@@ -76,7 +76,13 @@ export default function App() {
     <div className="flex min-h-dvh flex-col bg-bg text-text-primary">
       <Header />
 
-      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center gap-6 px-3.5 pt-6 pb-12 sm:gap-8 sm:px-4 sm:pt-14 sm:pb-20">
+      <main
+        style={{
+          paddingLeft: 'max(0.875rem, env(safe-area-inset-left, 0px))',
+          paddingRight: 'max(0.875rem, env(safe-area-inset-right, 0px))',
+        }}
+        className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center gap-6 pt-6 pb-12 sm:gap-8 sm:px-4 sm:pt-14 sm:pb-20"
+      >
         {/* Hero tagline for Sender */}
         {isSenderIdle && (
           <div className="text-center">
@@ -220,7 +226,14 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border/80 bg-surface/40 py-4 text-center text-xs text-text-tertiary backdrop-blur-sm">
+      <footer
+        style={{
+          paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 0px))',
+          paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
+          paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))',
+        }}
+        className="border-t border-border/80 bg-surface/40 pt-4 text-center text-xs text-text-tertiary backdrop-blur-sm"
+      >
         <p>
           VaultDrop — {t('header.e2ee')} •{' '}
           <a

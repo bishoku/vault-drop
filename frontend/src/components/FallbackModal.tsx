@@ -39,7 +39,10 @@ export const FallbackModal: React.FC<FallbackModalProps> = ({ isOpen, onConfirm,
     <dialog
       ref={dialogRef}
       onClose={onCancel}
-      className="m-auto w-[calc(100%-2rem)] max-w-md rounded-3xl bg-transparent p-0 shadow-2xl backdrop:bg-black/60 backdrop:backdrop-blur-sm"
+      style={{
+        maxWidth: 'calc(100vw - max(2rem, env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px)))',
+      }}
+      className="m-auto w-full max-w-md rounded-3xl bg-transparent p-0 shadow-2xl backdrop:bg-black/60 backdrop:backdrop-blur-sm"
     >
       <div className="flex w-full flex-col overflow-hidden rounded-3xl border border-border bg-surface text-left">
         <div className="p-5 sm:p-6">

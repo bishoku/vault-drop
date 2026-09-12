@@ -104,6 +104,10 @@ function getInitialTheme(): Theme {
 function applyTheme(theme: Theme): void {
   document.documentElement.setAttribute('data-theme', theme);
   localStorage.setItem('vaultdrop-theme', theme);
+  const themeColor = theme === 'dark' ? '#0b1120' : '#ffffff';
+  document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]').forEach((el) => {
+    el.setAttribute('content', themeColor);
+  });
 }
 
 // We use zustand without importing it here — the actual store creation
