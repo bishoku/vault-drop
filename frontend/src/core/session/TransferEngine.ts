@@ -5,6 +5,8 @@ import {
   createFSAFileWriter,
   triggerBlobDownload,
   isFileSystemAccessSupported,
+  cleanupOPFSTempFiles,
+  revokeActiveDownloadUrls,
 } from '../storage';
 import {
   importKeyFromRaw,
@@ -79,6 +81,7 @@ export class TransferEngine {
 
   constructor(callbacks: TransferEngineCallbacks) {
     this.callbacks = callbacks;
+    cleanupOPFSTempFiles().catch(() => {});
   }
 
   public getShareUrl(): string | null {
@@ -701,6 +704,7 @@ export class TransferEngine {
 
     this.sessionKeys = null;
     this.fileWriter = null;
+    revokeActiveDownloadUrls();
   }
 
   public destroy(): void {

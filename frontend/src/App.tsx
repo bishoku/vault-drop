@@ -8,6 +8,7 @@ import { DropZone } from './components/DropZone';
 import { ShareCard } from './components/ShareCard';
 import { ProgressBar } from './components/ProgressBar';
 import { ReloadPrompt } from './components/ReloadPrompt';
+import { cleanupOPFSTempFiles } from './core/storage';
 import { Download, Loader2, FolderDown, Zap, ShieldCheck, HardDrive } from 'lucide-react';
 
 const FallbackModal = lazy(() => import('./components/FallbackModal'));
@@ -34,9 +35,10 @@ export default function App() {
   } = useWebRTC();
   const wakeLock = useWakeLock();
 
-  // Load transfer history from IndexedDB on mount
+  // Load transfer history from IndexedDB and cleanup storage on mount
   useEffect(() => {
     loadHistory();
+    cleanupOPFSTempFiles().catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadHistory]);
 

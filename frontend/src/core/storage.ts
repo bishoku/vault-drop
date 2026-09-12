@@ -23,6 +23,53 @@ interface SaveFilePickerOptions {
   suggestedName?: string;
 }
 
+const activeBlobUrls = new Set<string>();
+
+/**
+ * Revokes all active object URLs created for downloads to promptly free browser heap memory.
+ */
+export function revokeActiveDownloadUrls(): void {
+  for (const url of activeBlobUrls) {
+    try {
+      URL.revokeObjectURL(url);
+    } catch {}
+  }
+  activeBlobUrls.clear();
+}
+
+/**
+ * Cleans up orphaned or expired temporary files in OPFS root.
+ * Files older than maxAgeMs (default: 30 minutes) are purged.
+ */
+export async function cleanupOPFSTempFiles(maxAgeMs: number = 30 * 60 * 1000): Promise<void> {
+  if (!isOPFSSupported()) return;
+
+  try {
+    const root = await navigator.storage.getDirectory();
+    const dirHandle = root as unknown as {
+      entries?: () => AsyncIterable<[string, FileSystemHandle]>;
+    };
+
+    if (typeof dirHandle.entries === 'function') {
+      const now = Date.now();
+      for await (const [name, handle] of dirHandle.entries()) {
+        if (handle.kind === 'file' && name.startsWith('vaultdrop_')) {
+          const parts = name.split('_');
+          const timestamp = parseInt(parts[1] || '0', 10);
+          if (timestamp > 0 && now - timestamp > maxAgeMs) {
+            try {
+              await root.removeEntry(name);
+              console.log('[Storage:OPFS] Purged orphaned temp file:', name);
+            } catch {}
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[Storage:OPFS] Error during OPFS cleanup:', err);
+  }
+}
+
 /**
  * Creates a stream writer using File System Access API (requires user gesture).
  */
@@ -79,6 +126,16 @@ export async function createOPFSFileWriter(
     close: async () => {
       await writable.close();
       const file = await fileHandle.getFile();
+
+      // Schedule cleanup of the temporary sandbox file after 3 minutes
+      // so browser download has finished reading the blob/file
+      setTimeout(async () => {
+        try {
+          await root.removeEntry(tempName);
+          console.log('[Storage:OPFS] Cleaned up completed temp file:', tempName);
+        } catch {}
+      }, 180000);
+
       return file;
     },
     abort: async () => {
@@ -92,6 +149,7 @@ export async function createOPFSFileWriter(
 
 /**
  * In-memory fallback writer for environments without FSA or OPFS.
+ * Avoids duplicate Uint8Array allocations during chunk accumulation.
  */
 export function createBlobFileWriter(): FileWriter {
   const chunks: Uint8Array[] = [];
@@ -99,7 +157,8 @@ export function createBlobFileWriter(): FileWriter {
   return {
     backend: 'blob',
     write: async (chunk: Uint8Array) => {
-      chunks.push(new Uint8Array(chunk));
+      // Avoid duplicate buffer allocation since chunk is already a fresh Uint8Array
+      chunks.push(chunk);
     },
     close: async () => {
       const blob = new Blob(chunks as unknown as BlobPart[], {
@@ -129,18 +188,35 @@ export async function createAutoFileWriter(fileName: string): Promise<FileWriter
   return createBlobFileWriter();
 }
 
+/**
+ * Triggers a browser download for a Blob and registers it for memory cleanup.
+ */
 export function triggerBlobDownload(blob: Blob, fileName: string): string {
   const url = URL.createObjectURL(blob);
+  activeBlobUrls.add(url);
+
   const a = document.createElement('a');
   a.href = url;
   a.download = fileName;
   a.style.display = 'none';
   document.body.appendChild(a);
   a.click();
+
   setTimeout(() => {
     try {
       document.body.removeChild(a);
     } catch {}
   }, 1000);
+
+  // Automatically revoke after 60 seconds to release Blob from browser RAM
+  setTimeout(() => {
+    if (activeBlobUrls.has(url)) {
+      try {
+        URL.revokeObjectURL(url);
+      } catch {}
+      activeBlobUrls.delete(url);
+    }
+  }, 60000);
+
   return url;
 }
