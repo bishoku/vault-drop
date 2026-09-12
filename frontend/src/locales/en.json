@@ -17,9 +17,13 @@
     "e2ee": "End-to-End Encrypted",
     "connection": {
       "p2p": "Direct P2P",
+      "p2p_short": "P2P",
       "relay": "Cloudflare Tunnel",
-      "waiting": "Waiting for Connection",
-      "connecting": "Connecting..."
+      "relay_short": "Tunnel",
+      "waiting": "Waiting for Peer",
+      "waiting_short": "Waiting",
+      "connecting": "Connecting...",
+      "connecting_short": "Connecting"
     }
   },
   "status": {

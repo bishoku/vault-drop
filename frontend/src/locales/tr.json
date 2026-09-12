@@ -17,9 +17,13 @@
     "e2ee": "Uçtan Uca Şifreli",
     "connection": {
       "p2p": "Doğrudan P2P",
+      "p2p_short": "P2P",
       "relay": "Cloudflare Tüneli",
+      "relay_short": "Tünel",
       "waiting": "Bağlantı Bekleniyor",
-      "connecting": "Bağlanıyor..."
+      "waiting_short": "Bekliyor",
+      "connecting": "Bağlanıyor...",
+      "connecting_short": "Bağlanıyor"
     }
   },
   "status": {

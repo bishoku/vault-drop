@@ -76,24 +76,24 @@ export default function App() {
     <div className="flex min-h-dvh flex-col bg-bg text-text-primary">
       <Header />
 
-      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center gap-8 px-4 pt-10 pb-16 sm:pt-14 sm:pb-20">
+      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center gap-6 px-3.5 pt-6 pb-12 sm:gap-8 sm:px-4 sm:pt-14 sm:pb-20">
         {/* Hero tagline for Sender */}
         {isSenderIdle && (
           <div className="text-center">
-            <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-accent/25 bg-accent/10 px-3.5 py-1 text-xs font-bold text-accent">
+            <div className="mb-2.5 inline-flex items-center gap-1.5 rounded-full border border-accent/25 bg-accent/10 px-3 py-0.5 text-[11px] font-bold text-accent sm:mb-3 sm:px-3.5 sm:py-1 sm:text-xs">
               <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
               <span>{t('app.badge')}</span>
             </div>
 
-            <h1 className="mb-3 text-4xl font-black tracking-tight text-text-primary sm:text-5xl">
+            <h1 className="mb-2 text-3xl font-black tracking-tight text-text-primary sm:mb-3 sm:text-5xl">
               VaultDrop
             </h1>
 
-            <p className="text-base font-semibold text-text-secondary sm:text-lg">
+            <p className="text-sm font-semibold text-text-secondary sm:text-lg">
               {t('app.tagline')}
             </p>
 
-            <p className="mt-1 text-xs text-text-tertiary sm:text-sm">
+            <p className="mt-1 text-xs text-text-tertiary sm:text-sm max-w-md mx-auto">
               {t('app.description')}
             </p>
           </div>
@@ -101,14 +101,14 @@ export default function App() {
 
         {/* Drop Zone — file selection (Sender only) */}
         {showDropZone && (
-          <div className="w-full space-y-6">
+          <div className="w-full space-y-5 sm:space-y-6">
             <DropZone onSendFile={handleSendFile} />
 
             {/* Feature Highlights Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-              <div className="flex items-center gap-3 rounded-2xl border border-border/80 bg-surface/70 p-3.5 backdrop-blur-sm shadow-xs">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
-                  <Zap size={18} />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 pt-1 sm:pt-2">
+              <div className="flex items-center gap-3 rounded-2xl border border-border/80 bg-surface/70 p-3 sm:p-3.5 backdrop-blur-sm shadow-xs">
+                <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
+                  <Zap size={17} className="sm:w-[18px] sm:h-[18px]" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs font-bold text-text-primary">{t('features.p2p_title')}</p>
@@ -116,9 +116,9 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 rounded-2xl border border-border/80 bg-surface/70 p-3.5 backdrop-blur-sm shadow-xs">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
-                  <ShieldCheck size={18} />
+              <div className="flex items-center gap-3 rounded-2xl border border-border/80 bg-surface/70 p-3 sm:p-3.5 backdrop-blur-sm shadow-xs">
+                <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
+                  <ShieldCheck size={17} className="sm:w-[18px] sm:h-[18px]" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs font-bold text-text-primary">{t('features.crypto_title')}</p>
@@ -126,9 +126,9 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 rounded-2xl border border-border/80 bg-surface/70 p-3.5 backdrop-blur-sm shadow-xs">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 text-purple-500">
-                  <HardDrive size={18} />
+              <div className="flex items-center gap-3 rounded-2xl border border-border/80 bg-surface/70 p-3 sm:p-3.5 backdrop-blur-sm shadow-xs">
+                <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 text-purple-500">
+                  <HardDrive size={17} className="sm:w-[18px] sm:h-[18px]" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs font-bold text-text-primary">{t('features.stream_title')}</p>
@@ -152,22 +152,22 @@ export default function App() {
 
         {/* Receiver waiting/connecting card */}
         {isReceiverWaiting && (
-          <div className="flex w-full flex-col items-center gap-5 rounded-3xl border border-border bg-surface p-10 text-center shadow-lg">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-accent/10 text-accent">
+          <div className="flex w-full flex-col items-center gap-4 sm:gap-5 rounded-3xl border border-border bg-surface p-6 sm:p-10 text-center shadow-lg">
+            <div className="flex h-13 w-13 sm:h-16 sm:w-16 items-center justify-center rounded-2xl bg-accent/10 text-accent">
               {store.connectionState === 'p2p' ? (
-                <Download size={32} className="animate-bounce" />
+                <Download size={28} className="animate-bounce sm:w-8 sm:h-8" />
               ) : (
-                <Loader2 size={32} className="animate-spin" />
+                <Loader2 size={28} className="animate-spin sm:w-8 sm:h-8" />
               )}
             </div>
 
             <div>
-              <h3 className="text-xl font-bold text-text-primary">
+              <h3 className="text-lg sm:text-xl font-bold text-text-primary">
                 {store.connectionState === 'p2p'
                   ? t('receive.connected_waiting')
                   : t('header.connection.connecting')}
               </h3>
-              <p className="mt-1 text-sm text-text-secondary">
+              <p className="mt-1 text-xs sm:text-sm text-text-secondary">
                 {store.connectionState === 'p2p'
                   ? t('receive.sender_preparing')
                   : t('receive.establishing')}

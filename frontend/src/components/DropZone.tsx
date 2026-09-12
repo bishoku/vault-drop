@@ -64,7 +64,7 @@ export const DropZone: React.FC<DropZoneProps> = ({ onSendFile }) => {
   return (
     <div className="flex w-full flex-col gap-4">
       <div
-        className={`group relative flex cursor-pointer flex-col items-center justify-center rounded-3xl border border-border bg-surface p-6 sm:p-10 shadow-lg shadow-slate-900/5 transition-all duration-200 ${
+        className={`group relative flex cursor-pointer flex-col items-center justify-center rounded-3xl border border-border bg-surface p-4 sm:p-10 shadow-lg shadow-slate-900/5 transition-all duration-200 ${
           isDragging
             ? 'scale-[1.01] ring-4 ring-accent/20 border-accent'
             : 'hover:shadow-xl hover:shadow-slate-900/10 hover:border-accent/40'
@@ -84,47 +84,47 @@ export const DropZone: React.FC<DropZoneProps> = ({ onSendFile }) => {
 
         {!selectedFile ? (
           <div
-            className={`flex w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed py-12 px-6 text-center transition-all duration-200 ${
+            className={`flex w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed py-8 px-4 sm:py-12 sm:px-6 text-center transition-all duration-200 ${
               isDragging
                 ? 'border-accent bg-accent/5'
                 : 'border-slate-300 dark:border-slate-700 bg-surface-alt/40 group-hover:border-accent/60 group-hover:bg-accent/5'
             }`}
           >
-            <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent text-white shadow-md shadow-accent/30 transition-transform duration-200 group-hover:scale-110">
-              <Upload size={30} strokeWidth={2.2} />
+            <div className="mb-4 sm:mb-5 flex h-13 w-13 sm:h-16 sm:w-16 items-center justify-center rounded-2xl bg-accent text-white shadow-md shadow-accent/30 transition-transform duration-200 group-hover:scale-110">
+              <Upload size={26} className="sm:w-[30px] sm:h-[30px]" strokeWidth={2.2} />
             </div>
 
-            <h3 className="mb-2 text-xl font-bold text-text-primary tracking-tight">
+            <h3 className="mb-1.5 sm:mb-2 text-lg sm:text-xl font-bold text-text-primary tracking-tight">
               {t('dropzone.title')}
             </h3>
 
-            <p className="mb-5 text-sm font-medium text-text-secondary">
+            <p className="mb-4 sm:mb-5 text-xs sm:text-sm font-medium text-text-secondary">
               {t('dropzone.subtitle')}
             </p>
 
-            <div className="flex items-center gap-2 rounded-xl bg-surface px-4 py-2 text-xs font-semibold text-accent shadow-xs border border-border">
-              <FolderPlus size={16} />
+            <div className="flex items-center gap-2 rounded-xl bg-surface px-3.5 py-2 text-xs font-semibold text-accent shadow-xs border border-border">
+              <FolderPlus size={15} />
               <span>{t('dropzone.browse')}</span>
             </div>
 
-            <span className="mt-5 text-xs text-text-tertiary">
+            <span className="mt-4 sm:mt-5 text-[11px] sm:text-xs text-text-tertiary">
               {t('dropzone.hint')}
             </span>
           </div>
         ) : (
           <div
-            className="flex w-full items-center justify-between gap-4 rounded-2xl border border-border bg-surface-alt p-5 shadow-xs"
+            className="flex w-full items-center justify-between gap-3 sm:gap-4 rounded-2xl border border-border bg-surface-alt p-3.5 sm:p-5 shadow-xs"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex min-w-0 items-center gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent/15 text-accent">
-                <FileIcon size={26} />
+            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+              <div className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl bg-accent/15 text-accent">
+                <FileIcon size={24} />
               </div>
               <div className="min-w-0">
-                <p className="truncate font-bold text-text-primary text-base">
+                <p className="truncate font-bold text-text-primary text-sm sm:text-base">
                   {selectedFile.name}
                 </p>
-                <p className="text-xs font-medium text-text-secondary mt-0.5">
+                <p className="text-[11px] sm:text-xs font-medium text-text-secondary mt-0.5">
                   {formatFileSize(selectedFile.size)}
                 </p>
               </div>
@@ -135,7 +135,7 @@ export const DropZone: React.FC<DropZoneProps> = ({ onSendFile }) => {
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-text-tertiary transition-colors hover:bg-surface hover:text-danger"
               title={t('dropzone.change')}
             >
-              <X size={20} />
+              <X size={18} />
             </button>
           </div>
         )}
@@ -144,10 +144,10 @@ export const DropZone: React.FC<DropZoneProps> = ({ onSendFile }) => {
       {selectedFile && (
         <button
           onClick={() => onSendFile(selectedFile)}
-          className="flex w-full items-center justify-center gap-2.5 rounded-2xl bg-accent py-4 text-base font-bold text-white shadow-lg shadow-accent/25 transition-all duration-200 hover:bg-accent-hover hover:shadow-xl hover:shadow-accent/35 active:scale-[0.99]"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-accent py-3.5 sm:py-4 text-sm sm:text-base font-bold text-white shadow-lg shadow-accent/25 transition-all duration-200 hover:bg-accent-hover hover:shadow-xl hover:shadow-accent/35 active:scale-[0.99]"
         >
           <span>{t('dropzone.send_file')}</span>
-          <ArrowRight size={20} />
+          <ArrowRight size={18} />
         </button>
       )}
     </div>

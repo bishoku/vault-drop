@@ -83,42 +83,42 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({ onCancel, onReset }) =
 
   if (isCompleted) {
     return (
-      <div className="flex w-full flex-col items-center gap-5 rounded-2xl border border-border bg-surface p-8 text-center shadow-md">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-success-light text-success shadow-xs">
-          <Check size={36} />
+      <div className="flex w-full flex-col items-center gap-4 sm:gap-5 rounded-3xl border border-border bg-surface p-5 sm:p-8 text-center shadow-md">
+        <div className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl bg-success-light text-success shadow-xs">
+          <Check size={32} className="sm:w-9 sm:h-9" />
         </div>
 
         <div>
-          <h3 className="text-2xl font-extrabold text-text-primary">
+          <h3 className="text-xl sm:text-2xl font-extrabold text-text-primary">
             {t('progress.completed')}
           </h3>
-          <p className="mt-1 font-medium text-text-secondary text-sm">
+          <p className="mt-1 font-medium text-text-secondary text-xs sm:text-sm truncate max-w-xs sm:max-w-md">
             {fileName}
           </p>
         </div>
 
-        <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-alt px-4 py-1.5 text-xs font-semibold">
+        <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-alt px-3.5 py-1 text-xs font-semibold">
           {hashVerified === null ? (
             <span className="text-text-secondary">{t('progress.verifying')}</span>
           ) : hashVerified ? (
             <>
-              <ShieldCheck size={16} className="text-success" />
+              <ShieldCheck size={15} className="text-success" />
               <span className="text-success">{t('progress.verified')}</span>
             </>
           ) : (
             <>
-              <X size={16} className="text-danger" />
+              <X size={15} className="text-danger" />
               <span className="text-danger">{t('errors.hashMismatch')}</span>
             </>
           )}
         </div>
 
-        <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
+        <div className="mt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5 sm:gap-3 w-full sm:w-auto">
           {canNativeShare && (
             <button
               type="button"
               onClick={handleNativeShare}
-              className="inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 font-bold text-accent-text text-sm shadow-md transition-all hover:bg-accent-hover active:scale-95 cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-5 py-2.5 font-bold text-accent-text text-sm shadow-md transition-all hover:bg-accent-hover active:scale-95 cursor-pointer"
             >
               {isImageOrVideo ? <ImageIcon size={16} /> : <Share2 size={16} />}
               <span>{isImageOrVideo ? t('progress.save_to_gallery') : t('progress.share_file')}</span>
@@ -129,7 +129,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({ onCancel, onReset }) =
             <a
               href={downloadUrl}
               download={fileName}
-              className={`inline-flex items-center gap-2 rounded-xl ${
+              className={`inline-flex items-center justify-center gap-2 rounded-xl ${
                 canNativeShare
                   ? 'border border-border bg-surface-alt px-5 py-2.5 font-semibold text-text-primary text-sm hover:bg-border'
                   : 'bg-accent px-5 py-2.5 font-bold text-accent-text text-sm shadow-md hover:bg-accent-hover'
@@ -142,7 +142,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({ onCancel, onReset }) =
 
           <button
             onClick={onReset}
-            className="inline-flex items-center gap-2 rounded-xl border border-border bg-surface-alt px-5 py-2.5 font-semibold text-text-primary text-sm hover:bg-border transition-all active:scale-95 cursor-pointer"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-surface-alt px-5 py-2.5 font-semibold text-text-primary text-sm hover:bg-border transition-all active:scale-95 cursor-pointer"
           >
             <span>{t('progress.transfer_another')}</span>
             <ArrowRight size={16} />
@@ -153,8 +153,8 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({ onCancel, onReset }) =
   }
 
   return (
-    <div className="flex w-full flex-col gap-4 rounded-2xl border border-border bg-surface p-6 shadow-md sm:p-8">
-      <div className="flex items-center justify-between gap-4">
+    <div className="flex w-full flex-col gap-4 rounded-3xl border border-border bg-surface p-4 sm:p-8 shadow-md">
+      <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-block text-xs font-bold uppercase tracking-wider text-accent">
@@ -165,20 +165,20 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({ onCancel, onReset }) =
               <span>{t('progress.streaming_to_disk')}</span>
             </span>
           </div>
-          <p className="truncate font-semibold text-text-primary text-base sm:text-lg">
+          <p className="truncate font-semibold text-text-primary text-sm sm:text-lg mt-0.5">
             {fileName}
           </p>
         </div>
 
         <button
           onClick={onCancel}
-          className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold text-danger transition-colors hover:bg-danger-light"
+          className="shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-danger transition-colors hover:bg-danger-light"
         >
           {t('progress.cancel')}
         </button>
       </div>
 
-      <div className="relative h-3 w-full overflow-hidden rounded-full bg-surface-alt border border-border">
+      <div className="relative h-2.5 sm:h-3 w-full overflow-hidden rounded-full bg-surface-alt border border-border">
         <div
           className="relative h-full transition-all duration-300 ease-out"
           style={{
@@ -190,7 +190,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({ onCancel, onReset }) =
         </div>
       </div>
 
-      <div className="flex items-center justify-between font-mono text-xs text-text-secondary">
+      <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-xs text-text-secondary">
         <span className="font-bold text-text-primary text-sm">{progress.percentage.toFixed(0)}%</span>
         <span>{formatSpeed(progress.speed)}</span>
         <span>{t('progress.remaining')}: {formatETA(progress.eta)}</span>

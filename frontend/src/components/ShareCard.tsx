@@ -51,55 +51,58 @@ export const ShareCard: React.FC<ShareCardProps> = ({ shareUrl, roomId: _roomId,
   };
 
   return (
-    <div className="flex w-full flex-col items-center gap-6 rounded-2xl border border-border bg-surface p-6 shadow-md sm:p-8">
+    <div className="flex w-full flex-col items-center gap-5 sm:gap-6 rounded-3xl border border-border bg-surface p-4 sm:p-8 shadow-md">
       <div className="text-center">
-        <h3 className="text-xl font-bold text-text-primary">
+        <h3 className="text-lg sm:text-xl font-bold text-text-primary">
           {t('share.title')}
         </h3>
-        <p className="mt-1 text-xs text-text-secondary sm:text-sm">
+        <p className="mt-1 text-xs text-text-secondary sm:text-sm max-w-sm">
           {t('share.description')}
         </p>
       </div>
 
       {qrCodeUrl && (
-        <div className="rounded-xl border border-border bg-white p-3 shadow-xs">
-          <img src={qrCodeUrl} alt="QR Code" className="h-44 w-44 rounded-lg sm:h-48 sm:w-48" />
+        <div className="rounded-2xl border border-border bg-white p-2.5 sm:p-3 shadow-xs">
+          <img src={qrCodeUrl} alt="QR Code" className="h-40 w-40 rounded-xl sm:h-48 sm:w-48" />
         </div>
       )}
 
       <div className="w-full space-y-2">
-        <div className="flex items-center gap-2">
-          <div className="flex-1 overflow-hidden rounded-xl border border-border bg-surface-alt p-3 font-mono text-xs text-text-primary sm:text-sm">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <div className="flex-1 min-w-0 overflow-hidden rounded-xl border border-border bg-surface-alt p-3 font-mono text-xs text-text-primary">
             <p className="truncate">{shareUrl}</p>
           </div>
 
-          <button
-            onClick={handleCopy}
-            className="flex h-11 items-center gap-1.5 rounded-xl bg-surface-hover px-4 font-semibold text-text-primary text-xs sm:text-sm transition-colors hover:bg-border active:scale-95"
-            title={t('share.copy_link')}
-          >
-            {copied ? (
-              <>
-                <Check size={16} className="text-success" />
-                <span className="text-success">{t('share.copied')}</span>
-              </>
-            ) : (
-              <>
-                <Clipboard size={16} />
-                <span>{t('share.copy_link')}</span>
-              </>
-            )}
-          </button>
-
-          {typeof navigator.share !== 'undefined' && (
+          <div className="flex items-center gap-2">
             <button
-              onClick={handleNativeShare}
-              className="flex h-11 items-center justify-center rounded-xl bg-accent px-3.5 text-accent-text transition-all hover:bg-accent-hover active:scale-95"
-              title={t('share.native_share')}
+              onClick={handleCopy}
+              className="flex-1 sm:flex-initial flex h-10 sm:h-11 items-center justify-center gap-1.5 rounded-xl bg-surface-hover px-4 font-semibold text-text-primary text-xs sm:text-sm transition-colors hover:bg-border active:scale-95"
+              title={t('share.copy_link')}
             >
-              <Share size={18} />
+              {copied ? (
+                <>
+                  <Check size={16} className="text-success" />
+                  <span className="text-success">{t('share.copied')}</span>
+                </>
+              ) : (
+                <>
+                  <Clipboard size={16} />
+                  <span>{t('share.copy_link')}</span>
+                </>
+              )}
             </button>
-          )}
+
+            {typeof navigator.share !== 'undefined' && (
+              <button
+                onClick={handleNativeShare}
+                className="flex-1 sm:flex-initial flex h-10 sm:h-11 items-center justify-center gap-1.5 rounded-xl bg-accent px-4 text-accent-text font-semibold text-xs sm:text-sm transition-all hover:bg-accent-hover active:scale-95"
+                title={t('share.native_share')}
+              >
+                <Share size={16} />
+                <span className="sm:hidden">{t('share.native_share')}</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

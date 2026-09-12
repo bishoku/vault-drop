@@ -39,15 +39,15 @@ export const FallbackModal: React.FC<FallbackModalProps> = ({ isOpen, onConfirm,
     <dialog
       ref={dialogRef}
       onClose={onCancel}
-      className="m-auto rounded-2xl bg-transparent p-0 shadow-2xl backdrop:bg-black/60 backdrop:backdrop-blur-sm"
+      className="m-auto w-[calc(100%-2rem)] max-w-md rounded-3xl bg-transparent p-0 shadow-2xl backdrop:bg-black/60 backdrop:backdrop-blur-sm"
     >
-      <div className="flex w-full max-w-md flex-col overflow-hidden rounded-2xl border border-border bg-surface text-left">
-        <div className="p-6">
+      <div className="flex w-full flex-col overflow-hidden rounded-3xl border border-border bg-surface text-left">
+        <div className="p-5 sm:p-6">
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-warning-light text-warning">
             <AlertTriangle size={24} />
           </div>
 
-          <h2 className="mb-1.5 text-xl font-bold text-text-primary">
+          <h2 className="mb-1.5 text-lg sm:text-xl font-bold text-text-primary">
             {t('fallback.title')}
           </h2>
 
