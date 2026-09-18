@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTransferStore } from './store';
 import { useWebRTC } from './hooks/useWebRTC';
@@ -8,15 +8,19 @@ import { DropZone } from './components/DropZone';
 import { ShareCard } from './components/ShareCard';
 import { ProgressBar } from './components/ProgressBar';
 import { IncomingTransferCard } from './components/IncomingTransferCard';
+import { MobileReceiveAction } from './components/MobileReceiveAction';
+import { FeatureHighlights } from './components/FeatureHighlights';
 import { ReloadPrompt } from './components/ReloadPrompt';
 import { cleanupOPFSTempFiles } from './core/storage';
-import { Download, Loader2, FolderDown, Zap, ShieldCheck, HardDrive } from 'lucide-react';
+import { Download, Loader2, FolderDown } from 'lucide-react';
 
 const FallbackModal = lazy(() => import('./components/FallbackModal'));
 const TransferHistoryDrawer = lazy(() => import('./components/TransferHistoryDrawer'));
+const QRScannerModal = lazy(() => import('./components/QRScannerModal'));
 
 export default function App() {
   const { t } = useTranslation();
+  const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
   const mode = useTransferStore((s) => s.mode);
   const roomId = useTransferStore((s) => s.roomId);
   const connectionState = useTransferStore((s) => s.connectionState);
@@ -30,6 +34,7 @@ export default function App() {
 
   const {
     startSending,
+    startReceiving,
     confirmFallback,
     cancelTransfer,
     acceptTransfer,
@@ -59,6 +64,14 @@ export default function App() {
   const handleSendFile = async (file: File) => {
     try {
       await startSending(file);
+    } catch {
+      setError('errors.transferFailed');
+    }
+  };
+
+  const handleScanSuccess = async (scannedRoomId: string, scannedRawKey: Uint8Array) => {
+    try {
+      await startReceiving(scannedRoomId, scannedRawKey);
     } catch {
       setError('errors.transferFailed');
     }
@@ -115,8 +128,8 @@ export default function App() {
               <span>{t('app.badge')}</span>
             </div>
 
-            <h1 className="mb-2 text-3xl font-black tracking-tight text-text-primary sm:mb-3 sm:text-5xl">
-              VaultDrop
+            <h1 className="font-extrabold tracking-tight text-text-primary text-2xl sm:text-4xl">
+              {t('app.title')}
             </h1>
 
             <p className="text-sm font-semibold text-text-secondary sm:text-lg">
@@ -131,41 +144,14 @@ export default function App() {
 
         {/* Drop Zone — file selection (Sender only) */}
         {showDropZone && (
-          <div className="w-full space-y-5 sm:space-y-6">
+          <div className="w-full space-y-4 sm:space-y-6">
             <DropZone onSendFile={handleSendFile} />
 
-            {/* Feature Highlights Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 pt-1 sm:pt-2">
-              <div className="flex items-center gap-3 rounded-2xl border border-border/80 bg-surface/70 p-3 sm:p-3.5 backdrop-blur-sm shadow-xs">
-                <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
-                  <Zap size={17} className="sm:w-[18px] sm:h-[18px]" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-bold text-text-primary">{t('features.p2p_title')}</p>
-                  <p className="text-[11px] text-text-tertiary truncate">{t('features.p2p_desc')}</p>
-                </div>
-              </div>
+            {/* Mobile Receive Action (Only visible on mobile screens) */}
+            <MobileReceiveAction onOpenScanner={() => setIsQRScannerOpen(true)} />
 
-              <div className="flex items-center gap-3 rounded-2xl border border-border/80 bg-surface/70 p-3 sm:p-3.5 backdrop-blur-sm shadow-xs">
-                <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
-                  <ShieldCheck size={17} className="sm:w-[18px] sm:h-[18px]" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-bold text-text-primary">{t('features.crypto_title')}</p>
-                  <p className="text-[11px] text-text-tertiary truncate">{t('features.crypto_desc')}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 rounded-2xl border border-border/80 bg-surface/70 p-3 sm:p-3.5 backdrop-blur-sm shadow-xs">
-                <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 text-purple-500">
-                  <HardDrive size={17} className="sm:w-[18px] sm:h-[18px]" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-bold text-text-primary">{t('features.stream_title')}</p>
-                  <p className="text-[11px] text-text-tertiary truncate">{t('features.stream_desc')}</p>
-                </div>
-              </div>
-            </div>
+            {/* Feature Highlights: Desktop Grid & Compact Mobile Segmented Bar */}
+            <FeatureHighlights />
           </div>
         )}
 
@@ -296,6 +282,17 @@ export default function App() {
       <Suspense fallback={null}>
         <TransferHistoryDrawer />
       </Suspense>
+
+      {/* QR Scanner Modal (Mobile receive via in-app camera) */}
+      {isQRScannerOpen && (
+        <Suspense fallback={null}>
+          <QRScannerModal
+            isOpen={isQRScannerOpen}
+            onClose={() => setIsQRScannerOpen(false)}
+            onScanSuccess={handleScanSuccess}
+          />
+        </Suspense>
+      )}
 
       {/* PWA Update Toast */}
       <ReloadPrompt />

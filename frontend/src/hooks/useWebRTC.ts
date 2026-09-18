@@ -7,7 +7,7 @@ import { parseURLFragment } from '../core/crypto';
 
 interface UseWebRTCReturn {
   startSending: (file: File) => Promise<void>;
-  startReceiving: () => Promise<void>;
+  startReceiving: (explicitRoomId?: string, explicitRawKey?: Uint8Array) => Promise<void>;
   chooseSaveLocation: () => Promise<void>;
   acceptTransfer: () => Promise<void>;
   rejectTransfer: () => void;
@@ -72,19 +72,26 @@ export function useWebRTC(): UseWebRTCReturn {
     await engineRef.current?.startSending(file);
   }, []);
 
-  const startReceiving = useCallback(async () => {
-    const fragment = parseURLFragment();
-    if (!fragment) {
-      useTransferStore.getState().setError('errors.invalidLink');
-      return;
+  const startReceiving = useCallback(async (explicitRoomId?: string, explicitRawKey?: Uint8Array) => {
+    let roomId = explicitRoomId;
+    let rawKey = explicitRawKey;
+
+    if (!roomId || !rawKey) {
+      const fragment = parseURLFragment();
+      if (!fragment) {
+        useTransferStore.getState().setError('errors.invalidLink');
+        return;
+      }
+      roomId = fragment.roomId;
+      rawKey = fragment.rawKey;
     }
 
     const store = useTransferStore.getState();
     store.setMode('receive');
-    store.setRoomId(fragment.roomId);
-    store.setRawKey(fragment.rawKey);
+    store.setRoomId(roomId);
+    store.setRawKey(rawKey);
 
-    await engineRef.current?.startReceiving(fragment.roomId, fragment.rawKey);
+    await engineRef.current?.startReceiving(roomId, rawKey);
   }, []);
 
   const chooseSaveLocation = useCallback(async () => {

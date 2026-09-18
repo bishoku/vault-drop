@@ -159,5 +159,19 @@
     "role_sent": "Sent",
     "role_received": "Received",
     "privacy_note": "All transfer records are saved locally in this device's IndexedDB. Zero logs on the server."
+  },
+  "mobile_receive": {
+    "action_title": "Receive File with QR",
+    "action_desc": "Scan sender's QR code to receive directly on this device"
+  },
+  "qr_scanner": {
+    "title": "Scan QR Code",
+    "camera_starting": "Starting camera...",
+    "align_frame": "Align QR code within the frame",
+    "camera_error": "Could not access camera or permission denied.",
+    "permission_hint": "Please allow camera permissions in your browser settings.",
+    "invalid_qr": "Not a valid VaultDrop transfer QR code.",
+    "scanning": "Scanning...",
+    "stop": "Close"
   }
 }

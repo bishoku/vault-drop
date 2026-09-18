@@ -28,8 +28,13 @@ export default defineConfig({
         theme_color: '#2563eb',
         background_color: '#0f172a',
         display: 'standalone',
+        id: './',
         scope: './',
         start_url: './',
+        capture_links: 'existing-client-navigate',
+        launch_handler: {
+          client_mode: ['navigate-existing', 'auto'],
+        },
         icons: [
           {
             src: 'pwa-192x192.png',

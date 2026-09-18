@@ -126,22 +126,33 @@ export function decodeKeyFromURL(encoded: string): Uint8Array {
   return bytes;
 }
 
-export function parseURLFragment(): { roomId: string; rawKey: Uint8Array } | null {
-  const fragment = window.location.hash.substring(1);
-  if (!fragment) return null;
-  const params = new URLSearchParams(fragment);
-  const roomId = params.get('room');
-  const keyStr = params.get('key');
-  if (!roomId || !keyStr) return null;
+export function parseTransferUrl(rawUrl: string): { roomId: string; rawKey: Uint8Array } | null {
   try {
+    let fragment = '';
+    if (rawUrl.includes('#')) {
+      fragment = rawUrl.split('#')[1] || '';
+    } else if (rawUrl.startsWith('room=') || rawUrl.includes('room=')) {
+      fragment = rawUrl;
+    }
+    if (!fragment) return null;
+    const params = new URLSearchParams(fragment);
+    const roomId = params.get('room');
+    const keyStr = params.get('key');
+    if (!roomId || !keyStr) return null;
     return {
       roomId,
       rawKey: decodeKeyFromURL(keyStr),
     };
   } catch (e) {
-    console.error('[VaultDrop] Error parsing key from URL fragment:', e);
+    console.error('[VaultDrop] Error parsing key from transfer URL:', e);
     return null;
   }
+}
+
+export function parseURLFragment(): { roomId: string; rawKey: Uint8Array } | null {
+  const fragment = window.location.hash.substring(1);
+  if (!fragment) return null;
+  return parseTransferUrl('#' + fragment);
 }
 
 export function buildShareURL(roomId: string, rawKey: Uint8Array): string {

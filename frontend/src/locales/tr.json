@@ -159,5 +159,19 @@
     "role_sent": "Gönderildi",
     "role_received": "Alındı",
     "privacy_note": "Tüm transfer kayıtları yalnızca bu cihazdaki IndexedDB'de saklanır. Sunucuda hiçbir kayıt tutulmaz."
+  },
+  "mobile_receive": {
+    "action_title": "QR Kod ile Dosya Al",
+    "action_desc": "Göndericinin QR kodunu tarayarak doğrudan bu cihazda indirin"
+  },
+  "qr_scanner": {
+    "title": "QR Kodu Tara",
+    "camera_starting": "Kamera başlatılıyor...",
+    "align_frame": "QR kodu çerçevenin içine hizalayın",
+    "camera_error": "Kamera açılamadı veya izin verilmedi.",
+    "permission_hint": "Lütfen tarayıcı ayarlarından kamera iznini onaylayın.",
+    "invalid_qr": "Geçerli bir VaultDrop paylaşım QR kodu bulunamadı.",
+    "scanning": "Taranıyor...",
+    "stop": "Kapat"
   }
 }
