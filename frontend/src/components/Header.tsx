@@ -3,7 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { Lock, Globe, Sun, Moon, History } from 'lucide-react';
 import { useTransferStore } from '../store';
 
-export const Header: React.FC = () => {
+interface HeaderProps {
+  onResetHome?: () => void;
+}
+
+export const Header: React.FC<HeaderProps> = ({ onResetHome }) => {
   const { t, i18n } = useTranslation();
   const connectionState = useTransferStore((s) => s.connectionState);
   const theme = useTransferStore((s) => s.theme);
@@ -71,18 +75,33 @@ export const Header: React.FC = () => {
     >
       {/* Brand & E2EE badge */}
       <div className="flex items-center gap-2 sm:gap-3 shrink-0 min-w-0">
-        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+        <button
+          type="button"
+          onClick={() => {
+            if (onResetHome) {
+              onResetHome();
+            } else {
+              if (window.location.hash) {
+                history.replaceState(null, '', window.location.pathname + window.location.search);
+              }
+              window.location.reload();
+            }
+          }}
+          className="group flex items-center gap-2 sm:gap-2.5 shrink-0 rounded-xl transition-transform active:scale-95 text-left cursor-pointer focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent"
+          title={t('header.go_home')}
+          aria-label={t('header.go_home')}
+        >
           <img
             src="./logo-128x128.png"
             alt="VaultDrop Logo"
-            className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl object-cover shadow-sm ring-1 ring-border/50 shrink-0"
+            className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl object-cover shadow-sm ring-1 ring-border/50 shrink-0 transition-transform group-hover:scale-105"
             width={36}
             height={36}
           />
-          <span className="text-lg sm:text-xl font-black tracking-tight text-text-primary shrink-0">
+          <span className="text-lg sm:text-xl font-black tracking-tight text-text-primary shrink-0 group-hover:text-accent transition-colors">
             VaultDrop
           </span>
-        </div>
+        </button>
 
         <div className="hidden items-center gap-1.5 rounded-full border border-accent/20 bg-accent/10 px-3 py-1 text-xs font-bold text-accent md:inline-flex">
           <Lock size={12} strokeWidth={2.5} />

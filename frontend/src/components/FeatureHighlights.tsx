@@ -65,7 +65,7 @@ export function FeatureHighlights() {
 
       {/* 2. Mobile: Compact Segmented Bar with Collapsible Accordion (< sm) */}
       <div className="sm:hidden flex flex-col gap-2">
-        <div className="flex items-center justify-between gap-2 rounded-2xl border border-border/70 bg-surface/60 p-1.5 backdrop-blur-sm shadow-xs">
+        <div className="grid grid-cols-3 gap-1.5 rounded-2xl border border-border/70 bg-surface/60 p-1.5 backdrop-blur-sm shadow-xs">
           {features.map((feat) => {
             const Icon = feat.icon;
             const isSelected = activeMobileFeature === feat.id;
@@ -75,24 +75,34 @@ export function FeatureHighlights() {
                 key={feat.id}
                 type="button"
                 onClick={() => toggleFeature(feat.id)}
-                className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 px-1 text-center transition-all ${
+                className={`flex flex-col items-center justify-center gap-1 rounded-xl py-2 px-1 text-center transition-all ${
                   isSelected
                     ? feat.borderActive
                     : 'text-text-secondary hover:bg-border/30 active:scale-95'
                 }`}
               >
-                <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg ${feat.bg} ${feat.color}`}>
-                  <Icon size={13} />
+                <div className="relative flex items-center justify-center">
+                  <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-xl ${feat.bg} ${feat.color}`}>
+                    <Icon size={14} />
+                  </div>
+                  {isSelected && (
+                    <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
+                    </span>
+                  )}
                 </div>
-                <span className={`text-[11px] font-semibold truncate ${isSelected ? 'text-text-primary' : 'text-text-secondary'}`}>
-                  {feat.title}
-                </span>
-                <ChevronDown
-                  size={12}
-                  className={`shrink-0 transition-transform duration-200 ${
-                    isSelected ? 'rotate-180 text-text-primary' : 'text-text-tertiary opacity-70'
-                  }`}
-                />
+
+                <div className="flex items-center justify-center gap-0.5 w-full">
+                  <span className={`text-[10px] font-semibold leading-tight text-center ${isSelected ? 'text-text-primary font-bold' : 'text-text-secondary'}`}>
+                    {feat.title}
+                  </span>
+                  <ChevronDown
+                    size={10}
+                    className={`shrink-0 transition-transform duration-200 ${
+                      isSelected ? 'rotate-180 text-text-primary' : 'text-text-tertiary opacity-70'
+                    }`}
+                  />
+                </div>
               </button>
             );
           })}

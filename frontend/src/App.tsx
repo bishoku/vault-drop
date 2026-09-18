@@ -111,7 +111,7 @@ export default function App() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-bg text-text-primary">
-      <Header />
+      <Header onResetHome={handleReset} />
 
       <main
         style={{

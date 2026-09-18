@@ -14,6 +14,7 @@
     "stream_desc": "Direct disk I/O stream transfer"
   },
   "header": {
+    "go_home": "Go to Home",
     "e2ee": "End-to-End Encrypted",
     "connection": {
       "p2p": "Direct P2P",
