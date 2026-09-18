@@ -48,6 +48,8 @@ interface TransferStore {
   // Transfer
   transferState: TransferState;
   setTransferState: (state: TransferState) => void;
+  isWaitingForAcceptance: boolean;
+  setIsWaitingForAcceptance: (waiting: boolean) => void;
   progress: TransferProgress;
   setProgress: (progress: Partial<TransferProgress>) => void;
 
@@ -147,6 +149,8 @@ export const useTransferStore = create<TransferStore>((set) => {
 
     transferState: 'idle',
     setTransferState: (transferState) => set({ transferState }),
+    isWaitingForAcceptance: false,
+    setIsWaitingForAcceptance: (isWaitingForAcceptance) => set({ isWaitingForAcceptance }),
     progress: { ...initialProgress },
     setProgress: (progress) =>
       set((state) => ({
@@ -199,6 +203,7 @@ export const useTransferStore = create<TransferStore>((set) => {
         connectionState: 'idle',
         isFallbackRequired: false,
         transferState: 'idle',
+        isWaitingForAcceptance: false,
         progress: { ...initialProgress },
         file: null,
         fileManifest: null,

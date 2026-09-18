@@ -17,6 +17,7 @@ export class TransferWorkerClient {
   private worker: Worker;
 
   public onManifest: ((manifest: FileManifest) => void) | null = null;
+  public onManifestSent: ((manifest: FileManifest) => void) | null = null;
   public onEncryptedChunk: ((data: ArrayBuffer) => void) | null = null;
   public onDecryptedChunk: ((data: Uint8Array, chunkIndex: number) => void) | null = null;
   public onProgress: ((sent: number, total: number, speed: number) => void) | null = null;
@@ -37,6 +38,9 @@ export class TransferWorkerClient {
     switch (msg.type) {
       case 'manifest':
         if (this.onManifest && msg.manifest) this.onManifest(msg.manifest);
+        break;
+      case 'manifest-sent':
+        if (this.onManifestSent && msg.manifest) this.onManifestSent(msg.manifest);
         break;
       case 'encrypted-chunk':
         if (this.onEncryptedChunk && msg.data) this.onEncryptedChunk(msg.data as ArrayBuffer);
@@ -66,6 +70,10 @@ export class TransferWorkerClient {
 
   public startSend(file: File, rawKey: Uint8Array, salt: Uint8Array): void {
     this.worker.postMessage({ type: 'start-send', file, rawKey, salt });
+  }
+
+  public startStream(): void {
+    this.worker.postMessage({ type: 'start-stream' });
   }
 
   public startReceive(rawKey: Uint8Array): void {

@@ -40,6 +40,7 @@ export interface TransferEngineCallbacks {
   onReceivedFile: (file: File | Blob | null, downloadUrl: string | null) => void;
   onShareUrlGenerated: (url: string, roomId: string, rawKey: Uint8Array) => void;
   onHistoryUpdated: () => void;
+  onAwaitingAcceptance?: (awaiting: boolean) => void;
 }
 
 const DEFAULT_PROD_SIGNALING_URL = 'wss://vaultdrop-signaling.barishoku.workers.dev';
@@ -69,6 +70,7 @@ export class TransferEngine {
 
   private isSender = false;
   private isConnecting = false;
+  private isAwaitingAcceptance = false;
   private expectedSha256: string | null = null;
   private hasStartedSend = false;
   private manifest: FileManifest | null = null;
@@ -86,6 +88,10 @@ export class TransferEngine {
 
   public getShareUrl(): string | null {
     return this.shareUrl;
+  }
+
+  public getIsAwaitingAcceptance(): boolean {
+    return this.isAwaitingAcceptance;
   }
 
   public canChooseSaveLocation(): boolean {
@@ -205,12 +211,10 @@ export class TransferEngine {
           console.log('[VaultDrop:Sender] Receiver joined room, initiating WebRTC connection...');
           this.setConnectionState('connecting');
 
-          const triggerSend = () => {
+          const prepareManifestAndSendChunk0 = () => {
             if (this.hasStartedSend) return;
             this.hasStartedSend = true;
-            this.transferStartTime = Date.now();
-            this.hasRecordedCompletion = false;
-            console.log('[VaultDrop:Sender] Starting file stream transfer to receiver...');
+            console.log('[VaultDrop:Sender] Preparing file manifest and Chunk 0 for receiver...');
 
             const worker = new TransferWorkerClient();
             this.worker = worker;
@@ -226,8 +230,18 @@ export class TransferEngine {
               this.callbacks.onFileManifest(manifest);
             };
 
+            worker.onManifestSent = () => {
+              console.log('[VaultDrop:Sender] Chunk 0 (manifest) sent. Awaiting receiver approval...');
+              this.isAwaitingAcceptance = true;
+              this.callbacks.onAwaitingAcceptance?.(true);
+            };
+
             worker.onEncryptedChunk = (chunkData) => {
-              this.peer?.send(chunkData);
+              if (this.connectionState === 'relay' && this.ws?.readyState === WebSocket.OPEN) {
+                this.ws.send(chunkData);
+              } else {
+                this.peer?.send(chunkData);
+              }
             };
 
             worker.onProgress = (sent, total, speed) => {
@@ -260,7 +274,6 @@ export class TransferEngine {
             };
 
             worker.startSend(file, keys.rawKey, keys.salt);
-            this.setTransferState('sending');
           };
 
           const peer = new PeerManager({
@@ -282,8 +295,22 @@ export class TransferEngine {
                 };
 
                 if (ctrl.type === 'receiver-ready') {
-                  console.log('[VaultDrop:Sender] Receiver signaled ready, triggering send immediately');
-                  triggerSend();
+                  console.log('[VaultDrop:Sender] Receiver signaled ready, preparing and sending manifest...');
+                  prepareManifestAndSendChunk0();
+                } else if (ctrl.type === 'transfer-accepted') {
+                  console.log('[VaultDrop:Sender] Receiver ACCEPTED transfer! Starting file stream...');
+                  this.isAwaitingAcceptance = false;
+                  this.callbacks.onAwaitingAcceptance?.(false);
+                  this.transferStartTime = Date.now();
+                  this.hasRecordedCompletion = false;
+                  this.setTransferState('sending');
+                  this.worker?.startStream();
+                } else if (ctrl.type === 'transfer-rejected') {
+                  console.log('[VaultDrop:Sender] Receiver REJECTED transfer.');
+                  this.isAwaitingAcceptance = false;
+                  this.callbacks.onAwaitingAcceptance?.(false);
+                  this.callbacks.onError('receive.rejected_by_receiver');
+                  this.cancelTransfer();
                 } else if (ctrl.type === 'transfer-ack') {
                   console.log('[VaultDrop:Sender] Transfer ACK received:', ctrl);
                   if (
@@ -318,14 +345,9 @@ export class TransferEngine {
             onChannelReady: () => {
               console.log('[VaultDrop:Sender] DataChannel ready on sender side');
               this.setConnectionState('p2p');
-
-              // Fallback start timer if receiver-ready missed
-              setTimeout(() => {
-                if (!this.hasStartedSend) {
-                  console.log('[VaultDrop:Sender] Fallback timer fired, starting send');
-                  triggerSend();
-                }
-              }, 1200);
+              if (!this.hasStartedSend) {
+                prepareManifestAndSendChunk0();
+              }
             },
             onBackpressure: (isPaused) => {
               if (isPaused) {
@@ -353,6 +375,26 @@ export class TransferEngine {
             },
           );
           break;
+
+        case 'transfer-accepted': {
+          console.log('[VaultDrop:Sender] Receiver accepted transfer via WebSocket!');
+          this.isAwaitingAcceptance = false;
+          this.callbacks.onAwaitingAcceptance?.(false);
+          this.transferStartTime = Date.now();
+          this.hasRecordedCompletion = false;
+          this.setTransferState('sending');
+          this.worker?.startStream();
+          break;
+        }
+
+        case 'transfer-rejected': {
+          console.log('[VaultDrop:Sender] Receiver rejected transfer via WebSocket.');
+          this.isAwaitingAcceptance = false;
+          this.callbacks.onAwaitingAcceptance?.(false);
+          this.callbacks.onError('receive.rejected_by_receiver');
+          this.cancelTransfer();
+          break;
+        }
 
         case 'transfer-ack': {
           const ctrl = message as { success?: boolean; sha256?: string };
@@ -417,28 +459,15 @@ export class TransferEngine {
       const worker = new TransferWorkerClient();
       this.worker = worker;
 
-      worker.onManifest = async (manifest) => {
+      worker.onManifest = (manifest) => {
         console.log(
           '[VaultDrop:Receiver] Manifest received:',
           manifest.fileName,
           `(${manifest.fileSize} bytes, ${manifest.totalChunks} chunks)`,
         );
-        this.transferStartTime = Date.now();
-        this.hasRecordedCompletion = false;
         this.manifest = manifest;
         this.callbacks.onFileManifest(manifest);
-        this.setTransferState('receiving');
-
-        try {
-          if (!this.fileWriter) {
-            const writer = await createAutoFileWriter(manifest.fileName);
-            this.fileWriter = writer;
-            console.log('[VaultDrop:Receiver] Auto-initialized storage with backend:', writer.backend);
-          }
-        } catch (err) {
-          console.error('[VaultDrop:Receiver] Error creating file writer:', err);
-          this.callbacks.onError('receive.saveError');
-        }
+        // Do not auto-initialize storage writer or set receiving state; wait for user consent
       };
 
       worker.onDecryptedChunk = async (chunkData, chunkIndex) => {
@@ -617,6 +646,54 @@ export class TransferEngine {
     }
   }
 
+  public async acceptTransfer(): Promise<void> {
+    if (!this.manifest) {
+      console.warn('[VaultDrop:Receiver] Cannot accept transfer: manifest is null');
+      return;
+    }
+
+    console.log('[VaultDrop:Receiver] User accepted transfer, initializing storage and notifying sender...');
+    this.transferStartTime = Date.now();
+    this.hasRecordedCompletion = false;
+
+    try {
+      if (!this.fileWriter) {
+        const writer = await createAutoFileWriter(this.manifest.fileName);
+        this.fileWriter = writer;
+        console.log('[VaultDrop:Receiver] Auto-initialized storage with backend:', writer.backend);
+      }
+    } catch (err) {
+      console.error('[VaultDrop:Receiver] Error creating file writer:', err);
+      this.callbacks.onError('receive.saveError');
+      return;
+    }
+
+    this.setTransferState('receiving');
+
+    const acceptMsg = JSON.stringify({ type: 'transfer-accepted' });
+    this.peer?.sendText(acceptMsg);
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      try {
+        this.ws.send(acceptMsg);
+      } catch {}
+    }
+  }
+
+  public rejectTransfer(): void {
+    console.log('[VaultDrop:Receiver] User rejected transfer.');
+    const rejectMsg = JSON.stringify({ type: 'transfer-rejected' });
+    this.peer?.sendText(rejectMsg);
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      try {
+        this.ws.send(rejectMsg);
+      } catch {}
+    }
+
+    this.cancelTransfer();
+    this.callbacks.onFileManifest(null);
+    this.setTransferState('idle');
+  }
+
   public confirmFallback(): void {
     this.callbacks.onFallbackRequired(false);
     this.setConnectionState('relay');
@@ -681,6 +758,8 @@ export class TransferEngine {
   public cleanup(): void {
     this.isConnecting = false;
     this.hasStartedSend = false;
+    this.isAwaitingAcceptance = false;
+    this.callbacks.onAwaitingAcceptance?.(false);
     this.transferStartTime = null;
     this.hasRecordedCompletion = false;
     this.file = null;

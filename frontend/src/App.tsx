@@ -7,6 +7,7 @@ import { Header } from './components/Header';
 import { DropZone } from './components/DropZone';
 import { ShareCard } from './components/ShareCard';
 import { ProgressBar } from './components/ProgressBar';
+import { IncomingTransferCard } from './components/IncomingTransferCard';
 import { ReloadPrompt } from './components/ReloadPrompt';
 import { cleanupOPFSTempFiles } from './core/storage';
 import { Download, Loader2, FolderDown, Zap, ShieldCheck, HardDrive } from 'lucide-react';
@@ -20,6 +21,8 @@ export default function App() {
   const roomId = useTransferStore((s) => s.roomId);
   const connectionState = useTransferStore((s) => s.connectionState);
   const transferState = useTransferStore((s) => s.transferState);
+  const fileManifest = useTransferStore((s) => s.fileManifest);
+  const isWaitingForAcceptance = useTransferStore((s) => s.isWaitingForAcceptance);
   const error = useTransferStore((s) => s.error);
   const isFallbackRequired = useTransferStore((s) => s.isFallbackRequired);
   const loadHistory = useTransferStore((s) => s.loadHistory);
@@ -29,6 +32,8 @@ export default function App() {
     startSending,
     confirmFallback,
     cancelTransfer,
+    acceptTransfer,
+    rejectTransfer,
     shareUrl,
     chooseSaveLocation,
     canChooseSaveLocation,
@@ -68,18 +73,26 @@ export default function App() {
 
   const isSenderIdle = mode === 'send' && connectionState === 'idle' && transferState === 'idle';
   const isWaitingForReceiver =
-    mode === 'send' && (connectionState === 'waiting' || connectionState === 'connecting');
+    mode === 'send' && transferState === 'idle' && Boolean(shareUrl);
   const isTransferring =
     transferState === 'sending' || transferState === 'receiving';
   const isCompleted = transferState === 'completed';
 
   const showDropZone = isSenderIdle;
-  const showShareCard = isWaitingForReceiver && shareUrl;
+  const showShareCard = isWaitingForReceiver && Boolean(shareUrl);
   const showProgress = isTransferring || isCompleted;
 
-  // Receiver waiting state: receiver has joined the room and is waiting for transfer to start
+  // Receiver is reviewing file manifest before accepting
+  const showIncomingTransferCard =
+    mode === 'receive' &&
+    fileManifest !== null &&
+    transferState === 'idle' &&
+    !error;
+
+  // Receiver waiting state: receiver has joined the room and is waiting for manifest
   const isReceiverWaiting =
     mode === 'receive' &&
+    fileManifest === null &&
     transferState === 'idle' &&
     !error;
 
@@ -159,9 +172,21 @@ export default function App() {
         {/* Share Card — waiting for receiver (Sender only) */}
         {showShareCard && (
           <ShareCard
-            shareUrl={shareUrl}
+            shareUrl={shareUrl!}
             roomId={roomId ?? ''}
-            isReceiverConnected={connectionState === 'connecting'}
+            isReceiverConnected={connectionState === 'connecting' || connectionState === 'p2p'}
+            isWaitingForAcceptance={isWaitingForAcceptance}
+          />
+        )}
+
+        {/* Incoming Transfer Card — receiver reviewing file before accepting */}
+        {showIncomingTransferCard && (
+          <IncomingTransferCard
+            manifest={fileManifest}
+            onAccept={acceptTransfer}
+            onDecline={rejectTransfer}
+            canChooseSaveLocation={canChooseSaveLocation}
+            onChooseSaveLocation={chooseSaveLocation}
           />
         )}
 

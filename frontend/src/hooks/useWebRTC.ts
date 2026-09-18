@@ -9,6 +9,8 @@ interface UseWebRTCReturn {
   startSending: (file: File) => Promise<void>;
   startReceiving: () => Promise<void>;
   chooseSaveLocation: () => Promise<void>;
+  acceptTransfer: () => Promise<void>;
+  rejectTransfer: () => void;
   confirmFallback: () => void;
   cancelTransfer: () => void;
   shareUrl: string | null;
@@ -55,6 +57,9 @@ export function useWebRTC(): UseWebRTCReturn {
       onHistoryUpdated: () => {
         useTransferStore.getState().loadHistory();
       },
+      onAwaitingAcceptance: (awaiting) => {
+        useTransferStore.getState().setIsWaitingForAcceptance(awaiting);
+      },
     };
 
     engineRef.current = new TransferEngine(callbacks);
@@ -86,6 +91,14 @@ export function useWebRTC(): UseWebRTCReturn {
     await engineRef.current?.chooseSaveLocation();
   }, []);
 
+  const acceptTransfer = useCallback(async () => {
+    await engineRef.current?.acceptTransfer();
+  }, []);
+
+  const rejectTransfer = useCallback(() => {
+    engineRef.current?.rejectTransfer();
+  }, []);
+
   const confirmFallback = useCallback(() => {
     engineRef.current?.confirmFallback();
   }, []);
@@ -111,6 +124,8 @@ export function useWebRTC(): UseWebRTCReturn {
     startSending,
     startReceiving,
     chooseSaveLocation,
+    acceptTransfer,
+    rejectTransfer,
     confirmFallback,
     cancelTransfer,
     shareUrl,

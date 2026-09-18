@@ -60,7 +60,8 @@
     "waitingForReceiver": "Alıcı bekleniyor...",
     "waiting_receiver": "Alıcı bekleniyor...",
     "receiverConnected": "Alıcı bağlandı!",
-    "receiver_connected": "Alıcı bağlandı!"
+    "receiver_connected": "Alıcı bağlandı!",
+    "receiver_waiting_approval": "Alıcı bağlandı • Dosya onayı bekleniyor..."
   },
   "progress": {
     "sending": "Gönderiliyor",
@@ -102,12 +103,21 @@
     "sender_preparing": "Gönderici dosyayı şifreleyip göndermeye hazırlanıyor...",
     "establishing": "Sinyal sunucusu üzerinden eşleşme yapılıyor...",
     "choose_folder": "Hedef Klasörü Seç (İsteğe Bağlı)",
-    "direct_disk": "Doğrudan Disk Akışı Aktif (Sıfır Bellek)"
+    "direct_disk": "Doğrudan Disk Akışı Aktif (Sıfır Bellek)",
+    "incoming_title": "Gelen Dosya Transferi",
+    "incoming_desc": "Gönderici cihaz bu dosyayı sizinle paylaşmak istiyor.",
+    "download_file": "Dosyayı İndir",
+    "decline_file": "Reddet",
+    "e2ee_badge": "Uçtan Uca Şifreli (AES-256-GCM)",
+    "e2ee_note": "Dosya göndericinin cihazında şifrelenmiştir ve doğrudan cihazınıza akar. Sunucuda depolanmaz.",
+    "location_selected": "Hedef konum seçildi ✓",
+    "rejected_by_receiver": "Alıcı dosya transferini reddetti."
   },
   "errors": {
     "roomFull": "Oda dolu — aynı anda yalnızca 2 kişi bağlanabilir.",
     "connectionLost": "Bağlantı koptu.",
     "transferFailed": "Transfer başarısız oldu.",
+    "transferRejected": "Alıcı dosya transferini reddetti.",
     "hashMismatch": "Dosya bütünlüğü doğrulaması başarısız! Dosya aktarım sırasında bozulmuş olabilir.",
     "browserNotSupported": "Tarayıcınız bu özelliği desteklemiyor.",
     "fileTooLarge": "Dosya boyutu bu tarayıcı için çok büyük.",

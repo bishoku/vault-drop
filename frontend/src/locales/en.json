@@ -60,7 +60,8 @@
     "waitingForReceiver": "Waiting for receiver...",
     "waiting_receiver": "Waiting for receiver...",
     "receiverConnected": "Receiver connected!",
-    "receiver_connected": "Receiver connected!"
+    "receiver_connected": "Receiver connected!",
+    "receiver_waiting_approval": "Receiver connected • Waiting for approval..."
   },
   "progress": {
     "sending": "Sending",
@@ -102,12 +103,21 @@
     "sender_preparing": "Sender is encrypting and preparing file stream...",
     "establishing": "Matching via signaling server...",
     "choose_folder": "Choose Save Folder (Optional)",
-    "direct_disk": "Direct-to-Disk Stream Active (Zero RAM)"
+    "direct_disk": "Direct-to-Disk Stream Active (Zero RAM)",
+    "incoming_title": "Incoming File Transfer",
+    "incoming_desc": "The sender wants to share this file with you.",
+    "download_file": "Download File",
+    "decline_file": "Decline",
+    "e2ee_badge": "End-to-End Encrypted (AES-256-GCM)",
+    "e2ee_note": "This file is encrypted on the sender device and streams directly to you. Never stored on any server.",
+    "location_selected": "Save location chosen ✓",
+    "rejected_by_receiver": "The receiver declined the file transfer."
   },
   "errors": {
     "roomFull": "Room is full — only 2 people can connect at a time.",
     "connectionLost": "Connection lost.",
     "transferFailed": "Transfer failed.",
+    "transferRejected": "The receiver declined the file transfer.",
     "hashMismatch": "File integrity check failed! The file may have been corrupted in transit.",
     "browserNotSupported": "Your browser does not support this feature.",
     "fileTooLarge": "File size is too large for this browser.",

@@ -7,9 +7,15 @@ interface ShareCardProps {
   shareUrl: string;
   roomId: string;
   isReceiverConnected: boolean;
+  isWaitingForAcceptance?: boolean;
 }
 
-export const ShareCard: React.FC<ShareCardProps> = ({ shareUrl, roomId: _roomId, isReceiverConnected }) => {
+export const ShareCard: React.FC<ShareCardProps> = ({
+  shareUrl,
+  roomId: _roomId,
+  isReceiverConnected,
+  isWaitingForAcceptance,
+}) => {
   const { t } = useTranslation();
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const [copied, setCopied] = useState(false);
@@ -107,7 +113,16 @@ export const ShareCard: React.FC<ShareCardProps> = ({ shareUrl, roomId: _roomId,
       </div>
 
       <div className="flex w-full items-center justify-center gap-2 border-t border-border pt-4">
-        {isReceiverConnected ? (
+        {isWaitingForAcceptance ? (
+          <>
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500/15 text-amber-500">
+              <Loader2 size={14} className="animate-spin" />
+            </div>
+            <span className="font-semibold text-amber-600 dark:text-amber-400 text-sm">
+              {t('share.receiver_waiting_approval')}
+            </span>
+          </>
+        ) : isReceiverConnected ? (
           <>
             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-success-light text-success">
               <Check size={14} />

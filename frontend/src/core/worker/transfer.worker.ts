@@ -11,6 +11,7 @@ import { StreamingSHA256 } from '../sha256';
 
 type WorkerInMessage =
   | { type: 'start-send'; file: File; rawKey: Uint8Array; salt: Uint8Array }
+  | { type: 'start-stream' }
   | { type: 'start-receive'; rawKey: Uint8Array }
   | { type: 'chunk-received'; data: ArrayBuffer }
   | { type: 'pause' }
@@ -19,6 +20,7 @@ type WorkerInMessage =
 
 type WorkerOutMessage =
   | { type: 'manifest'; manifest: FileManifest }
+  | { type: 'manifest-sent'; manifest: FileManifest }
   | { type: 'encrypted-chunk'; data: ArrayBuffer }
   | { type: 'decrypted-chunk'; data: Uint8Array; chunkIndex: number }
   | { type: 'progress'; sent: number; total: number; speed: number }
@@ -32,6 +34,7 @@ const CHUNK_SIZE = 128 * 1024;
 let aborted = false;
 let isBackpressurePaused = false;
 let drainResolver: (() => void) | null = null;
+let streamStartResolver: (() => void) | null = null;
 
 interface ReceiverContext {
   encryptionKey: CryptoKey;
@@ -90,10 +93,20 @@ ctx.onmessage = async (e: MessageEvent<WorkerInMessage>) => {
         drainResolver = null;
         resolve();
       }
+    } else if (msg.type === 'start-stream') {
+      if (streamStartResolver) {
+        const resolve = streamStartResolver;
+        streamStartResolver = null;
+        resolve();
+      }
     } else if (msg.type === 'abort') {
       aborted = true;
       receiverCtx = null;
       earlyChunkBuffer.length = 0;
+      if (streamStartResolver) {
+        streamStartResolver();
+        streamStartResolver = null;
+      }
       if (drainResolver) {
         drainResolver();
         drainResolver = null;
@@ -128,9 +141,13 @@ async function handleSend(file: File, rawKey: Uint8Array, salt: Uint8Array) {
   const encManifest = await encryptChunk(encryptionKey, salt, manifestBytes, 0, false);
   const serializedManifest = serializeChunk(0, encManifest.iv, encManifest.ciphertext);
   post({ type: 'encrypted-chunk', data: serializedManifest }, [serializedManifest]);
+  post({ type: 'manifest-sent', manifest });
 
-  // Give receiver brief moment to open storage stream
-  await new Promise((resolve) => setTimeout(resolve, 80));
+  // Wait until receiver explicitly accepts transfer
+  await new Promise<void>((resolve) => {
+    streamStartResolver = resolve;
+  });
+  if (aborted) return;
 
   // Stream slices one-by-one with incremental SHA-256 and backpressure
   const hasher = new StreamingSHA256();
