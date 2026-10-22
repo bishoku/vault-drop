@@ -198,6 +198,7 @@ export const useTransferStore = create<TransferStore>((set) => {
 
     reset: () =>
       set({
+        mode: 'send',
         roomId: null,
         rawKey: null,
         connectionState: 'idle',

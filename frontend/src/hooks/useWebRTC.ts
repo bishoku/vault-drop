@@ -104,6 +104,11 @@ export function useWebRTC(): UseWebRTCReturn {
 
   const rejectTransfer = useCallback(() => {
     engineRef.current?.rejectTransfer();
+    useTransferStore.getState().reset();
+    setShareUrl(null);
+    if (window.location.hash) {
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
   }, []);
 
   const confirmFallback = useCallback(() => {
