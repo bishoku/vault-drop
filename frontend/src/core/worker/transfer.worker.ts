@@ -28,8 +28,8 @@ type WorkerOutMessage =
   | { type: 'complete'; sha256: string }
   | { type: 'error'; message: string };
 
-// 128 KB chunks: optimal for high-throughput WebRTC SCTP without RAM or IPC bloat
-const CHUNK_SIZE = 128 * 1024;
+// 60 KB chunks (61,440 bytes): + 32 bytes wire header = 61,472 bytes (< 64 KB SCTP maxMessageSize across all browsers)
+const CHUNK_SIZE = 60 * 1024;
 
 let aborted = false;
 let isBackpressurePaused = false;
@@ -44,6 +44,8 @@ interface ReceiverContext {
   receivedBytes: number;
   startTime: number;
   lastProgressTime: number;
+  lastProgressBytes: number;
+  smoothedSpeed: number;
   lastProgressPercent: number;
   pendingFileChunks: Map<number, ArrayBuffer>;
 }
@@ -154,7 +156,9 @@ async function handleSend(file: File, rawKey: Uint8Array, salt: Uint8Array) {
   let offset = 0;
   let chunkIndex = 1;
   const startTime = Date.now();
-  let lastProgressTime = 0;
+  let lastProgressTime = startTime;
+  let lastProgressBytes = 0;
+  let smoothedSpeed = 0;
   let lastProgressPercent = -1;
 
   while (offset < file.size && !aborted) {
@@ -165,7 +169,7 @@ async function handleSend(file: File, rawKey: Uint8Array, salt: Uint8Array) {
     const end = Math.min(offset + CHUNK_SIZE, file.size);
     const isLastChunk = end === file.size;
 
-    // Read only this 128KB slice
+    // Read only this 60KB slice
     const blobSlice = file.slice(offset, end);
     const sliceBuf = await blobSlice.arrayBuffer();
     const chunkData = new Uint8Array(sliceBuf);
@@ -185,15 +189,22 @@ async function handleSend(file: File, rawKey: Uint8Array, salt: Uint8Array) {
     const currentPercent = file.size > 0 ? Math.floor((offset / file.size) * 100) : 0;
     const now = Date.now();
     if (isLastChunk || now - lastProgressTime >= 100 || currentPercent !== lastProgressPercent) {
-      lastProgressTime = now;
+      const dtSec = (now - lastProgressTime) / 1000;
+      if (dtSec > 0.02) {
+        const instantSpeed = (offset - lastProgressBytes) / dtSec;
+        smoothedSpeed = smoothedSpeed === 0 ? instantSpeed : smoothedSpeed * 0.7 + instantSpeed * 0.3;
+        lastProgressTime = now;
+        lastProgressBytes = offset;
+      }
       lastProgressPercent = currentPercent;
       const elapsed = (now - startTime) / 1000;
-      const speed = elapsed > 0 ? offset / elapsed : 0;
+      const fallbackSpeed = elapsed > 0 ? offset / elapsed : 0;
+      const speed = smoothedSpeed > 0 ? smoothedSpeed : fallbackSpeed;
       post({ type: 'progress', sent: offset, total: file.size, speed });
     }
 
-    // Cooperative yield: yield to worker event loop every 16 chunks (2MB) without artificial timer clamp
-    if (chunkIndex % 16 === 0) {
+    // Cooperative yield: yield to worker event loop every 32 chunks (~1.92MB) without artificial timer clamp
+    if (chunkIndex % 32 === 0) {
       await new Promise((resolve) => setTimeout(resolve, 0));
     }
   }
@@ -225,7 +236,9 @@ async function handleReceive(rawKey: Uint8Array) {
     receivedChunks: 0,
     receivedBytes: 0,
     startTime: Date.now(),
-    lastProgressTime: 0,
+    lastProgressTime: Date.now(),
+    lastProgressBytes: 0,
+    smoothedSpeed: 0,
     lastProgressPercent: -1,
     pendingFileChunks: new Map(),
   };
@@ -256,6 +269,9 @@ async function processIncomingChunk(data: ArrayBuffer) {
       const manifest = JSON.parse(manifestJson) as FileManifest;
       receiverCtx.manifest = manifest;
       receiverCtx.startTime = Date.now();
+      receiverCtx.lastProgressTime = receiverCtx.startTime;
+      receiverCtx.lastProgressBytes = 0;
+      receiverCtx.smoothedSpeed = 0;
       receiverCtx.hasher.init();
 
       console.log('[TransferWorker:Recv] Manifest received:', manifest.fileName, manifest.fileSize, 'bytes');
@@ -345,10 +361,20 @@ async function processFileChunk(chunkIndex: number, data: ArrayBuffer) {
     const currentPercent = total > 0 ? Math.floor((receiverCtx.receivedBytes / total) * 100) : 0;
     const now = Date.now();
     if (isLastChunk || now - receiverCtx.lastProgressTime >= 100 || currentPercent !== receiverCtx.lastProgressPercent) {
-      receiverCtx.lastProgressTime = now;
+      const dtSec = (now - receiverCtx.lastProgressTime) / 1000;
+      if (dtSec > 0.02) {
+        const instantSpeed = (receiverCtx.receivedBytes - receiverCtx.lastProgressBytes) / dtSec;
+        receiverCtx.smoothedSpeed =
+          receiverCtx.smoothedSpeed === 0
+            ? instantSpeed
+            : receiverCtx.smoothedSpeed * 0.7 + instantSpeed * 0.3;
+        receiverCtx.lastProgressTime = now;
+        receiverCtx.lastProgressBytes = receiverCtx.receivedBytes;
+      }
       receiverCtx.lastProgressPercent = currentPercent;
       const elapsed = (now - receiverCtx.startTime) / 1000;
-      const speed = elapsed > 0 ? receiverCtx.receivedBytes / elapsed : 0;
+      const fallbackSpeed = elapsed > 0 ? receiverCtx.receivedBytes / elapsed : 0;
+      const speed = receiverCtx.smoothedSpeed > 0 ? receiverCtx.smoothedSpeed : fallbackSpeed;
       post({
         type: 'progress',
         sent: receiverCtx.receivedBytes,

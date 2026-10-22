@@ -24,9 +24,11 @@ interface SaveFilePickerOptions {
 }
 
 const activeBlobUrls = new Set<string>();
+const activeOPFSTempFiles = new Set<string>();
 
 /**
- * Revokes all active object URLs created for downloads to promptly free browser heap memory.
+ * Revokes all active object URLs created for downloads and removes active OPFS temp files
+ * when a session is reset or cleaned up, promptly freeing browser heap and sandboxed disk space.
  */
 export function revokeActiveDownloadUrls(): void {
   for (const url of activeBlobUrls) {
@@ -35,6 +37,22 @@ export function revokeActiveDownloadUrls(): void {
     } catch {}
   }
   activeBlobUrls.clear();
+
+  if (activeOPFSTempFiles.size > 0 && isOPFSSupported()) {
+    const filesToRemove = Array.from(activeOPFSTempFiles);
+    activeOPFSTempFiles.clear();
+    navigator.storage
+      .getDirectory()
+      .then(async (root) => {
+        for (const tempName of filesToRemove) {
+          try {
+            await root.removeEntry(tempName);
+            console.log('[Storage:OPFS] Cleaned up session temp file:', tempName);
+          } catch {}
+        }
+      })
+      .catch(() => {});
+  }
 }
 
 /**
@@ -126,19 +144,11 @@ export async function createOPFSFileWriter(
     close: async () => {
       await writable.close();
       const file = await fileHandle.getFile();
-
-      // Schedule cleanup of the temporary sandbox file after 3 minutes
-      // so browser download has finished reading the blob/file
-      setTimeout(async () => {
-        try {
-          await root.removeEntry(tempName);
-          console.log('[Storage:OPFS] Cleaned up completed temp file:', tempName);
-        } catch {}
-      }, 180000);
-
+      activeOPFSTempFiles.add(tempName);
       return file;
     },
     abort: async () => {
+      activeOPFSTempFiles.delete(tempName);
       try {
         await writable.abort();
         await root.removeEntry(tempName);
@@ -207,16 +217,6 @@ export function triggerBlobDownload(blob: Blob, fileName: string): string {
       document.body.removeChild(a);
     } catch {}
   }, 1000);
-
-  // Automatically revoke after 60 seconds to release Blob from browser RAM
-  setTimeout(() => {
-    if (activeBlobUrls.has(url)) {
-      try {
-        URL.revokeObjectURL(url);
-      } catch {}
-      activeBlobUrls.delete(url);
-    }
-  }, 60000);
 
   return url;
 }

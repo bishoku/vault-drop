@@ -52,13 +52,26 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadHistory]);
 
-  // Acquire wake lock during active transfer
+  // Acquire wake lock and protect against accidental tab closure during active transfer
   useEffect(() => {
-    if (transferState === 'sending' || transferState === 'receiving') {
+    const isActive = transferState === 'sending' || transferState === 'receiving';
+    if (isActive) {
       wakeLock.request();
     } else {
       wakeLock.release();
     }
+
+    if (!isActive) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
   }, [transferState, wakeLock]);
 
   const handleSendFile = async (file: File) => {

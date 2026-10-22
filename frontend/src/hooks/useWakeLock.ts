@@ -8,11 +8,13 @@ interface WakeLockState {
 }
 
 let wakeLockSentinel: WakeLockSentinel | null = null;
+let shouldHoldWakeLock = false;
 
 export function useWakeLock(): WakeLockState {
-  const isSupported = 'wakeLock' in navigator;
+  const isSupported = typeof navigator !== 'undefined' && 'wakeLock' in navigator;
 
   const request = useCallback(async () => {
+    shouldHoldWakeLock = true;
     if (!isSupported) return;
     try {
       wakeLockSentinel = await navigator.wakeLock.request('screen');
@@ -25,20 +27,20 @@ export function useWakeLock(): WakeLockState {
   }, [isSupported]);
 
   const release = useCallback(async () => {
+    shouldHoldWakeLock = false;
     if (wakeLockSentinel) {
       await wakeLockSentinel.release();
       wakeLockSentinel = null;
     }
   }, []);
 
-  // Re-acquire wake lock when page becomes visible again
+  // Re-acquire wake lock when page becomes visible again during an active transfer
   useEffect(() => {
     if (!isSupported) return;
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && !wakeLockSentinel) {
-        // Only re-acquire if we had one before (during active transfer)
-        // This is handled by the component that uses this hook
+      if (document.visibilityState === 'visible' && shouldHoldWakeLock && !wakeLockSentinel) {
+        request().catch(() => {});
       }
     };
 
@@ -46,7 +48,7 @@ export function useWakeLock(): WakeLockState {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [isSupported]);
+  }, [isSupported, request]);
 
   // Clean up on unmount
   useEffect(() => {

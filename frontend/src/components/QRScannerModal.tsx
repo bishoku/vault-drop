@@ -182,7 +182,7 @@ export function QRScannerModal({ isOpen, onClose, onScanSuccess }: QRScannerModa
         <div className="p-4 bg-surface flex justify-end">
           <button
             onClick={onClose}
-            className="w-full rounded-xl border border-border bg-surface-raised py-2.5 text-xs font-semibold text-text-primary hover:bg-border/50 transition-colors"
+            className="w-full rounded-xl border border-border bg-surface-alt py-2.5 text-xs font-semibold text-text-primary hover:bg-border/50 transition-colors"
           >
             {t('common.close')}
           </button>

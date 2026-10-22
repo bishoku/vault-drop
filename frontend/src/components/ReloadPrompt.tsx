@@ -49,7 +49,7 @@ export const ReloadPrompt: React.FC = () => {
               onClick={() => updateServiceWorker(true)}
               className="inline-flex items-center gap-1.5 rounded-xl bg-accent px-3.5 py-1.5 text-xs font-bold text-accent-text shadow-sm transition-all hover:bg-accent-hover active:scale-95 cursor-pointer"
             >
-              <RefreshCw size={13} className="animate-spin-slow" />
+              <RefreshCw size={13} />
               <span>{t('pwa.update_now')}</span>
             </button>
             <button

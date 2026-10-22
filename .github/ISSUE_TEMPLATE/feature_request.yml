@@ -1,0 +1,27 @@
+name: Feature Request
+description: Suggest an enhancement, UX improvement, or protocol optimization for VaultDrop
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or Use Case
+      description: What problem does this feature solve, or what workflow does it improve?
+      placeholder: "When transferring multiple files..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe how you envision this working within VaultDrop's zero-knowledge P2P architecture.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered & Privacy Impact
+      description: Does this change impact E2EE, metadata visibility, or Cloudflare Free Tier limits?

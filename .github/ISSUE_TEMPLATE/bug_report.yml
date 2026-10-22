@@ -1,0 +1,74 @@
+name: Bug Report
+description: Report a bug in P2P transfer, WebSocket fallback, cryptography, or UI/PWA behavior
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug in **VaultDrop**! Please fill out the details below so we can reproduce the issue.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what went wrong.
+      placeholder: "Transfer stalls at 0% when sending between Firefox Desktop and iOS Safari..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this issue?
+      value: |
+        1. Open Sender on '...'
+        2. Select a file of size '...'
+        3. Open Share Link / QR on Receiver '...'
+        4. Observe error '...'
+    validations:
+      required: true
+
+  - type: dropdown
+    id: transport
+    attributes:
+      label: Connection Mode
+      description: Which transport mode was active when the issue occurred?
+      options:
+        - Direct P2P (WebRTC DataChannel)
+        - Cloudflare Tunnel (WebSocket Relay Fallback <= 10 MB)
+        - Stuck on Connecting / Signaling
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: file_size
+    attributes:
+      label: File Size & Type
+      description: Approximate size and format of the file being transferred.
+      placeholder: "e.g., 4.2 GB .mp4 or 5 MB .zip"
+
+  - type: input
+    id: sender_env
+    attributes:
+      label: Sender Environment (OS & Browser)
+      placeholder: "e.g., macOS 15 / Chrome 134"
+    validations:
+      required: true
+
+  - type: input
+    id: receiver_env
+    attributes:
+      label: Receiver Environment (OS & Browser)
+      placeholder: "e.g., iOS 18.2 / Safari PWA"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Browser Console Logs
+      description: Copy any relevant `[VaultDrop]` or `[PeerManager]` logs from DevTools Console (do not include full share links with secret keys).
+      render: shell

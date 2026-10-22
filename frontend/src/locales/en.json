@@ -85,6 +85,9 @@
   "fallback": {
     "title": "P2P Connection Failed",
     "description": "Direct peer connection could not be established. You can continue the transfer via an encrypted Cloudflare tunnel.",
+    "limit_exceeded_desc": "Direct P2P connection failed and the selected file ({{fileSize}}) exceeds the maximum {{maxSize}} limit for Cloudflare WebSocket Tunnel. Larger files require a direct P2P connection.",
+    "size_limit_title": "Tunnel Size Limit (Max 10 MB)",
+    "size_limit_note": "To protect relay quotas, WebSocket tunnel fallback supports files up to {{maxSize}}.",
     "security_title": "End-to-End Encryption Maintained",
     "security": "Your file is encrypted locally in your browser. Cloudflare cannot decrypt or inspect file contents.",
     "privacy_title": "Metadata Visibility",
@@ -103,7 +106,7 @@
     "connected_waiting": "Connected, Waiting for File",
     "sender_preparing": "Sender is encrypting and preparing file stream...",
     "establishing": "Matching via signaling server...",
-    "choose_folder": "Choose Save Folder (Optional)",
+    "choose_folder": "Choose Save Location (Optional)",
     "direct_disk": "Direct-to-Disk Stream Active (Zero RAM)",
     "incoming_title": "Incoming File Transfer",
     "incoming_desc": "The sender wants to share this file with you.",
@@ -122,6 +125,7 @@
     "hashMismatch": "File integrity check failed! The file may have been corrupted in transit.",
     "browserNotSupported": "Your browser does not support this feature.",
     "fileTooLarge": "File size is too large for this browser.",
+    "relaySizeLimitExceeded": "WebSocket Tunnel fallback is limited to a maximum of 10 MB. Larger files require a direct P2P connection.",
     "permissionDenied": "File save permission denied.",
     "invalidLink": "Invalid share link.",
     "roomNotFound": "Room not found or expired."

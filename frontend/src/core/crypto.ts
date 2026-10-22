@@ -1,3 +1,5 @@
+export const MAX_RELAY_FILE_SIZE = 10 * 1024 * 1024; // 10 MB strict limit for WebSocket Relay Fallback
+
 export interface SessionKeys {
   encryptionKey: CryptoKey;
   rawKey: Uint8Array;
@@ -160,30 +162,6 @@ export function buildShareURL(roomId: string, rawKey: Uint8Array): string {
   const url = new URL(window.location.href);
   url.hash = `room=${roomId}&key=${keyStr}`;
   return url.toString();
-}
-
-export async function computeFileHash(file: File): Promise<string> {
-  const reader = file.stream().getReader();
-  const chunks: Uint8Array[] = [];
-  let totalLength = 0;
-
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    chunks.push(value);
-    totalLength += value.length;
-  }
-
-  const fullBuffer = new Uint8Array(totalLength);
-  let offset = 0;
-  for (const chunk of chunks) {
-    fullBuffer.set(chunk, offset);
-    offset += chunk.length;
-  }
-
-  const hashBuffer = await crypto.subtle.digest('SHA-256', fullBuffer as unknown as ArrayBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 export function serializeChunk(chunkIndex: number, iv: Uint8Array, ciphertext: Uint8Array): ArrayBuffer {

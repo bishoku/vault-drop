@@ -85,6 +85,9 @@
   "fallback": {
     "title": "P2P Bağlantı Kurulamadı",
     "description": "Doğrudan P2P bağlantısı kurulamadı. Aktarımı Cloudflare üzerinden şifrelenmiş tünel ile tamamlayabilirsiniz.",
+    "limit_exceeded_desc": "Doğrudan P2P bağlantısı kurulamadı ve seçilen dosya ({{fileSize}}), Cloudflare WebSocket Tüneli için belirlenen maksimum {{maxSize}} sınırını aşıyor. Büyük dosyalar yalnızca doğrudan P2P ile aktarılabilir.",
+    "size_limit_title": "Tünel Boyut Sınırı (Maks. 10 MB)",
+    "size_limit_note": "Altyapı kotalarını korumak adına WebSocket tünel modunda en fazla {{maxSize}} boyutunda dosya aktarılabilir.",
     "security_title": "Uçtan Uca Şifreleme Korunur",
     "security": "Dosya içeriğiniz tarayıcınızda şifrelenir. Cloudflare aktarılan içeriği çözemez veya okuyamaz.",
     "privacy_title": "Metaveri Görünürlüğü",
@@ -103,7 +106,7 @@
     "connected_waiting": "Bağlandı, Dosya Bekleniyor",
     "sender_preparing": "Gönderici dosyayı şifreleyip göndermeye hazırlanıyor...",
     "establishing": "Sinyal sunucusu üzerinden eşleşme yapılıyor...",
-    "choose_folder": "Hedef Klasörü Seç (İsteğe Bağlı)",
+    "choose_folder": "Kayıt Konumunu Seç (İsteğe Bağlı)",
     "direct_disk": "Doğrudan Disk Akışı Aktif (Sıfır Bellek)",
     "incoming_title": "Gelen Dosya Transferi",
     "incoming_desc": "Gönderici cihaz bu dosyayı sizinle paylaşmak istiyor.",
@@ -122,6 +125,7 @@
     "hashMismatch": "Dosya bütünlüğü doğrulaması başarısız! Dosya aktarım sırasında bozulmuş olabilir.",
     "browserNotSupported": "Tarayıcınız bu özelliği desteklemiyor.",
     "fileTooLarge": "Dosya boyutu bu tarayıcı için çok büyük.",
+    "relaySizeLimitExceeded": "WebSocket Tünel modunda en fazla 10 MB dosya aktarılabilir. Daha büyük dosyalar için doğrudan P2P bağlantısı gereklidir.",
     "permissionDenied": "Dosya kaydetme izni reddedildi.",
     "invalidLink": "Geçersiz paylaşım linki.",
     "roomNotFound": "Oda bulunamadı veya süresi dolmuş."

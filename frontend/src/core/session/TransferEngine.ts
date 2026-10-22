@@ -13,10 +13,14 @@ import {
   generateSessionKeys,
   buildShareURL,
   bytesToHex,
+  MAX_RELAY_FILE_SIZE,
   type SessionKeys,
   type FileManifest,
 } from '../crypto';
 import { addTransferRecord } from '../history';
+
+const WS_HIGH_WATERMARK = 2 * 1024 * 1024; // 2 MB WebSocket buffer pause threshold
+const WS_LOW_WATERMARK = 512 * 1024;       // 512 KB WebSocket buffer resume threshold
 
 export type EngineConnectionState = 'idle' | 'waiting' | 'connecting' | 'p2p' | 'relay' | 'failed';
 export type EngineTransferState = 'idle' | 'sending' | 'receiving' | 'completed' | 'error';
@@ -80,6 +84,10 @@ export class TransferEngine {
   private connectionState: EngineConnectionState = 'idle';
   private transferState: EngineTransferState = 'idle';
   private lastProgressPercentage = 0;
+  private wsBackpressureTimer: number = 0;
+  private isWsBackpressurePaused = false;
+  private writeQueue: Promise<void> = Promise.resolve();
+  private writeErrorOccurred = false;
 
   constructor(callbacks: TransferEngineCallbacks) {
     this.callbacks = callbacks;
@@ -108,7 +116,7 @@ export class TransferEngine {
     this.callbacks.onTransferStateChange(state);
   }
 
-  private connectSignaling(roomId: string): Promise<WebSocket> {
+  private connectSignaling(roomId: string, role: 'sender' | 'receiver'): Promise<WebSocket> {
     return new Promise((resolve, reject) => {
       if (this.ws) {
         this.ws.onclose = null;
@@ -116,7 +124,7 @@ export class TransferEngine {
         this.ws = null;
       }
 
-      const wsUrl = `${SIGNALING_URL}/api/room/${roomId}/ws`;
+      const wsUrl = `${SIGNALING_URL}/api/room/${roomId}/ws?role=${role}`;
       const ws = new WebSocket(wsUrl);
       ws.binaryType = 'arraybuffer';
 
@@ -178,6 +186,93 @@ export class TransferEngine {
     this.callbacks.onHistoryUpdated();
   }
 
+  private sendViaWebSocketWithBackpressure(ws: WebSocket, chunkData: ArrayBuffer): void {
+    if (ws.readyState !== WebSocket.OPEN) return;
+    ws.send(chunkData);
+
+    if (ws.bufferedAmount > WS_HIGH_WATERMARK && !this.isWsBackpressurePaused) {
+      this.isWsBackpressurePaused = true;
+      this.worker?.notifyPause();
+
+      if (!this.wsBackpressureTimer) {
+        this.wsBackpressureTimer = window.setInterval(() => {
+          if (ws.readyState !== WebSocket.OPEN || ws.bufferedAmount <= WS_LOW_WATERMARK) {
+            if (this.wsBackpressureTimer) {
+              clearInterval(this.wsBackpressureTimer);
+              this.wsBackpressureTimer = 0;
+            }
+            if (this.isWsBackpressurePaused) {
+              this.isWsBackpressurePaused = false;
+              this.worker?.notifyDrain();
+            }
+          }
+        }, 40);
+      }
+    }
+  }
+
+  private initSenderWorker(file: File, keys: SessionKeys, ws: WebSocket): void {
+    this.worker?.destroy();
+    const worker = new TransferWorkerClient();
+    this.worker = worker;
+
+    worker.onManifest = (manifest) => {
+      console.log(
+        '[VaultDrop:Sender] File manifest prepared:',
+        manifest.fileName,
+        manifest.fileSize,
+        'bytes',
+      );
+      this.manifest = manifest;
+      this.callbacks.onFileManifest(manifest);
+    };
+
+    worker.onManifestSent = () => {
+      console.log('[VaultDrop:Sender] Chunk 0 (manifest) sent. Awaiting receiver approval...');
+      this.isAwaitingAcceptance = true;
+      this.callbacks.onAwaitingAcceptance?.(true);
+    };
+
+    worker.onEncryptedChunk = (chunkData) => {
+      if (this.connectionState === 'relay') {
+        this.sendViaWebSocketWithBackpressure(ws, chunkData);
+      } else {
+        this.peer?.send(chunkData);
+      }
+    };
+
+    worker.onProgress = (sent, total, speed) => {
+      const percentage = total > 0 ? Math.round((sent / total) * 100) : 0;
+      const eta = speed > 0 ? Math.round((total - sent) / speed) : 0;
+      this.lastProgressPercentage = percentage;
+      this.callbacks.onProgress({ bytesSent: sent, bytesTotal: total, speed, eta, percentage });
+    };
+
+    worker.onSentAllChunks = (sha256) => {
+      console.log(
+        '[VaultDrop:Sender] Sent all chunks and trailer (100%), awaiting ACK from receiver. SHA-256:',
+        sha256,
+      );
+      this.expectedSha256 = sha256;
+      this.lastProgressPercentage = 100;
+      this.callbacks.onProgress({
+        bytesSent: file.size,
+        bytesTotal: file.size,
+        speed: 0,
+        eta: 0,
+        percentage: 100,
+      });
+    };
+
+    worker.onError = (errMsg) => {
+      console.error('[VaultDrop:Sender] Worker error:', errMsg);
+      this.callbacks.onError(errMsg);
+      this.setTransferState('error');
+    };
+
+    worker.startSend(file, keys.rawKey, keys.salt);
+  }
+
   public async startSending(file: File): Promise<void> {
     this.cleanup();
     this.isSender = true;
@@ -196,7 +291,7 @@ export class TransferEngine {
 
     console.log('[VaultDrop:Sender] Room:', roomId, 'rawKey prefix:', bytesToHex(keys.rawKey.slice(0, 8)));
 
-    const ws = await this.connectSignaling(roomId);
+    const ws = await this.connectSignaling(roomId, 'sender');
 
     ws.onmessage = (event: MessageEvent) => {
       if (typeof event.data !== 'string') return;
@@ -204,6 +299,7 @@ export class TransferEngine {
       const message = JSON.parse(event.data as string) as {
         type: string;
         payload?: RTCSessionDescriptionInit | RTCIceCandidateInit;
+        message?: string;
       };
 
       switch (message.type) {
@@ -215,65 +311,7 @@ export class TransferEngine {
             if (this.hasStartedSend) return;
             this.hasStartedSend = true;
             console.log('[VaultDrop:Sender] Preparing file manifest and Chunk 0 for receiver...');
-
-            const worker = new TransferWorkerClient();
-            this.worker = worker;
-
-            worker.onManifest = (manifest) => {
-              console.log(
-                '[VaultDrop:Sender] File manifest prepared:',
-                manifest.fileName,
-                manifest.fileSize,
-                'bytes',
-              );
-              this.manifest = manifest;
-              this.callbacks.onFileManifest(manifest);
-            };
-
-            worker.onManifestSent = () => {
-              console.log('[VaultDrop:Sender] Chunk 0 (manifest) sent. Awaiting receiver approval...');
-              this.isAwaitingAcceptance = true;
-              this.callbacks.onAwaitingAcceptance?.(true);
-            };
-
-            worker.onEncryptedChunk = (chunkData) => {
-              if (this.connectionState === 'relay' && this.ws?.readyState === WebSocket.OPEN) {
-                this.ws.send(chunkData);
-              } else {
-                this.peer?.send(chunkData);
-              }
-            };
-
-            worker.onProgress = (sent, total, speed) => {
-              const percentage = total > 0 ? Math.round((sent / total) * 100) : 0;
-              const eta = speed > 0 ? Math.round((total - sent) / speed) : 0;
-              this.lastProgressPercentage = percentage;
-              this.callbacks.onProgress({ bytesSent: sent, bytesTotal: total, speed, eta, percentage });
-            };
-
-            worker.onSentAllChunks = (sha256) => {
-              console.log(
-                '[VaultDrop:Sender] Sent all chunks and trailer (100%), awaiting ACK from receiver. SHA-256:',
-                sha256,
-              );
-              this.expectedSha256 = sha256;
-              this.lastProgressPercentage = 100;
-              this.callbacks.onProgress({
-                bytesSent: file.size,
-                bytesTotal: file.size,
-                speed: 0,
-                eta: 0,
-                percentage: 100,
-              });
-            };
-
-            worker.onError = (errMsg) => {
-              console.error('[VaultDrop:Sender] Worker error:', errMsg);
-              this.callbacks.onError(errMsg);
-              this.setTransferState('error');
-            };
-
-            worker.startSend(file, keys.rawKey, keys.salt);
+            this.initSenderWorker(file, keys, ws);
           };
 
           const peer = new PeerManager({
@@ -337,7 +375,18 @@ export class TransferEngine {
               if (state === 'connected') {
                 this.setConnectionState('p2p');
               } else if (state === 'failed') {
-                if (this.transferState !== 'completed') {
+                if (this.transferState !== 'completed' && this.connectionState !== 'relay') {
+                  if (file.size > MAX_RELAY_FILE_SIZE && ws.readyState === WebSocket.OPEN) {
+                    try {
+                      ws.send(
+                        JSON.stringify({
+                          type: 'relay-size-exceeded',
+                          fileSize: file.size,
+                          fileName: file.name,
+                        }),
+                      );
+                    } catch {}
+                  }
                   this.callbacks.onFallbackRequired(true);
                 }
               }
@@ -376,8 +425,22 @@ export class TransferEngine {
           );
           break;
 
+        case 'relay-start': {
+          console.log('[VaultDrop:Sender] Receiver requested WebSocket relay mode');
+          if (this.connectionState !== 'relay') {
+            this.confirmFallback(false);
+          }
+          break;
+        }
+
         case 'transfer-accepted': {
           console.log('[VaultDrop:Sender] Receiver accepted transfer via WebSocket!');
+          if (this.connectionState === 'relay' && this.file && this.file.size > MAX_RELAY_FILE_SIZE) {
+            this.callbacks.onError('errors.relaySizeLimitExceeded');
+            this.setTransferState('error');
+            this.cancelTransfer();
+            break;
+          }
           this.isAwaitingAcceptance = false;
           this.callbacks.onAwaitingAcceptance?.(false);
           this.transferStartTime = Date.now();
@@ -413,6 +476,15 @@ export class TransferEngine {
             this.callbacks.onError('errors.hashMismatch');
             this.setTransferState('error');
           }
+          break;
+        }
+
+        case 'error': {
+          console.error('[VaultDrop:Sender] Server signaling/relay error:', message.message);
+          this.callbacks.onError(message.message || 'errors.transferFailed');
+          this.setTransferState('error');
+          this.setConnectionState('failed');
+          this.worker?.abort();
           break;
         }
 
@@ -452,7 +524,7 @@ export class TransferEngine {
     this.sessionKeys = { encryptionKey, rawKey, salt: new Uint8Array(0) };
 
     try {
-      const ws = await this.connectSignaling(roomId);
+      const ws = await this.connectSignaling(roomId, 'receiver');
       this.isConnecting = false;
       console.log('[VaultDrop:Receiver] Connected to signaling server');
 
@@ -467,23 +539,43 @@ export class TransferEngine {
         );
         this.manifest = manifest;
         this.callbacks.onFileManifest(manifest);
+
+        // Enforce strict 10 MB limit if operating in WebSocket Relay mode
+        if (this.connectionState === 'relay' && manifest.fileSize > MAX_RELAY_FILE_SIZE) {
+          console.warn('[VaultDrop:Receiver] File size exceeds 10 MB WebSocket Relay limit:', manifest.fileSize);
+          this.callbacks.onError('errors.relaySizeLimitExceeded');
+          this.setTransferState('error');
+          this.setConnectionState('failed');
+          worker.abort();
+          return;
+        }
         // Do not auto-initialize storage writer or set receiving state; wait for user consent
       };
 
-      worker.onDecryptedChunk = async (chunkData, chunkIndex) => {
-        if (this.fileWriter) {
+      worker.onDecryptedChunk = (chunkData, chunkIndex) => {
+        // Chain writes sequentially to prevent concurrent write race conditions and premature close()
+        this.writeQueue = this.writeQueue.then(async () => {
+          if (this.writeErrorOccurred || !this.fileWriter) return;
           try {
             await this.fileWriter.write(chunkData);
           } catch (err) {
+            this.writeErrorOccurred = true;
             console.error(`[VaultDrop:Receiver] Error writing chunk ${chunkIndex} to disk:`, err);
             this.callbacks.onError('receive.saveError');
             this.setTransferState('error');
             worker.abort();
           }
-        }
+        });
       };
 
       worker.onProgress = (sent, total, speed) => {
+        if (this.connectionState === 'relay' && (sent > MAX_RELAY_FILE_SIZE || total > MAX_RELAY_FILE_SIZE)) {
+          this.callbacks.onError('errors.relaySizeLimitExceeded');
+          this.setTransferState('error');
+          this.setConnectionState('failed');
+          worker.abort();
+          return;
+        }
         const percentage = total > 0 ? Math.round((sent / total) * 100) : 0;
         const eta = speed > 0 ? Math.round((total - sent) / speed) : 0;
         this.lastProgressPercentage = percentage;
@@ -492,6 +584,10 @@ export class TransferEngine {
 
       worker.onComplete = async (sha256) => {
         console.log('[VaultDrop:Receiver] File stream complete. Verified SHA-256:', sha256);
+        // Wait for all pending disk writes in the serial write queue to complete before closing
+        await this.writeQueue;
+        if (this.writeErrorOccurred) return;
+
         const fileName = this.manifest?.fileName || 'download';
         let savedFile: File | Blob | null = null;
         let blobUrl: string | null = null;
@@ -512,6 +608,7 @@ export class TransferEngine {
           } catch (err) {
             console.error('[VaultDrop:Receiver] Save error on close:', err);
             this.callbacks.onError('receive.saveError');
+            return;
           }
         }
 
@@ -572,6 +669,9 @@ export class TransferEngine {
         const message = JSON.parse(event.data as string) as {
           type: string;
           payload?: RTCSessionDescriptionInit | RTCIceCandidateInit;
+          fileSize?: number;
+          fileName?: string;
+          message?: string;
         };
 
         switch (message.type) {
@@ -591,7 +691,7 @@ export class TransferEngine {
                 if (state === 'connected') {
                   this.setConnectionState('p2p');
                 } else if (state === 'failed') {
-                  if (this.transferState !== 'completed') {
+                  if (this.transferState !== 'completed' && this.connectionState !== 'relay') {
                     this.callbacks.onFallbackRequired(true);
                   }
                 }
@@ -617,6 +717,47 @@ export class TransferEngine {
               },
             );
             break;
+
+          case 'relay-size-exceeded': {
+            if (typeof message.fileSize === 'number' && !this.manifest) {
+              const syntheticManifest: FileManifest = {
+                fileName: message.fileName || 'file',
+                fileSize: message.fileSize,
+                mimeType: 'application/octet-stream',
+                totalChunks: 0,
+                sha256: '',
+              };
+              this.manifest = syntheticManifest;
+              this.callbacks.onFileManifest(syntheticManifest);
+            }
+            this.callbacks.onFallbackRequired(true);
+            break;
+          }
+
+          case 'relay-start': {
+            console.log('[VaultDrop:Receiver] Sender switched to WebSocket relay mode');
+            if (this.manifest && this.manifest.fileSize > MAX_RELAY_FILE_SIZE) {
+              this.callbacks.onFallbackRequired(false);
+              this.callbacks.onError('errors.relaySizeLimitExceeded');
+              this.setConnectionState('failed');
+              break;
+            }
+            this.callbacks.onFallbackRequired(false);
+            this.peer?.close();
+            this.peer = null;
+            this.setConnectionState('relay');
+            break;
+          }
+
+          case 'error': {
+            console.error('[VaultDrop:Receiver] Server signaling/relay error:', message.message);
+            this.callbacks.onFallbackRequired(false);
+            this.callbacks.onError(message.message || 'errors.transferFailed');
+            this.setTransferState('error');
+            this.setConnectionState('failed');
+            worker.abort();
+            break;
+          }
 
           case 'peer-left':
             console.warn('[VaultDrop:Receiver] Sender disconnected');
@@ -652,9 +793,18 @@ export class TransferEngine {
       return;
     }
 
+    if (this.connectionState === 'relay' && this.manifest.fileSize > MAX_RELAY_FILE_SIZE) {
+      this.callbacks.onError('errors.relaySizeLimitExceeded');
+      this.setTransferState('error');
+      this.setConnectionState('failed');
+      return;
+    }
+
     console.log('[VaultDrop:Receiver] User accepted transfer, initializing storage and notifying sender...');
     this.transferStartTime = Date.now();
     this.hasRecordedCompletion = false;
+    this.writeQueue = Promise.resolve();
+    this.writeErrorOccurred = false;
 
     try {
       if (!this.fileWriter) {
@@ -694,58 +844,39 @@ export class TransferEngine {
     this.setTransferState('idle');
   }
 
-  public confirmFallback(): void {
+  public confirmFallback(notifyPeer = true): void {
+    const knownFileSize = this.file?.size ?? this.manifest?.fileSize ?? 0;
+    if (knownFileSize > MAX_RELAY_FILE_SIZE) {
+      console.warn('[VaultDrop:Relay] Fallback blocked: file size exceeds 10 MB limit:', knownFileSize);
+      this.callbacks.onFallbackRequired(false);
+      this.callbacks.onError('errors.relaySizeLimitExceeded');
+      this.setConnectionState('failed');
+      return;
+    }
+
     this.callbacks.onFallbackRequired(false);
+    this.peer?.close();
+    this.peer = null;
     this.setConnectionState('relay');
 
     const ws = this.ws;
-    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      this.callbacks.onError('errors.connectionLost');
+      this.setConnectionState('failed');
+      return;
+    }
 
-    ws.send(JSON.stringify({ type: 'relay-start' }));
+    if (notifyPeer) {
+      ws.send(JSON.stringify({ type: 'relay-start' }));
+    }
 
     const keys = this.sessionKeys;
     if (!keys) return;
 
     if (this.isSender && this.file) {
-      const file = this.file;
-      const worker = new TransferWorkerClient();
-      this.worker = worker;
-
-      worker.onEncryptedChunk = (chunkData) => {
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.send(chunkData);
-        }
-      };
-
-      worker.onProgress = (sent, total, speed) => {
-        const percentage = total > 0 ? Math.round((sent / total) * 100) : 0;
-        const eta = speed > 0 ? Math.round((total - sent) / speed) : 0;
-        this.lastProgressPercentage = percentage;
-        this.callbacks.onProgress({ bytesSent: sent, bytesTotal: total, speed, eta, percentage });
-      };
-
-      worker.onSentAllChunks = (sha256) => {
-        this.expectedSha256 = sha256;
-        this.lastProgressPercentage = 100;
-        this.callbacks.onProgress({
-          bytesSent: file.size,
-          bytesTotal: file.size,
-          speed: 0,
-          eta: 0,
-          percentage: 100,
-        });
-      };
-
-      worker.onError = (errMsg) => {
-        console.error('[VaultDrop:Sender] Worker error:', errMsg);
-        this.callbacks.onError(errMsg);
-        this.setTransferState('error');
-      };
-
-      this.transferStartTime = Date.now();
+      this.hasStartedSend = true;
       this.hasRecordedCompletion = false;
-      worker.startSend(file, keys.rawKey, keys.salt);
-      this.setTransferState('sending');
+      this.initSenderWorker(this.file, keys, ws);
     }
   }
 
@@ -756,6 +887,13 @@ export class TransferEngine {
   }
 
   public cleanup(): void {
+    if (this.wsBackpressureTimer) {
+      clearInterval(this.wsBackpressureTimer);
+      this.wsBackpressureTimer = 0;
+    }
+    this.isWsBackpressurePaused = false;
+    this.writeQueue = Promise.resolve();
+    this.writeErrorOccurred = false;
     this.isConnecting = false;
     this.hasStartedSend = false;
     this.isAwaitingAcceptance = false;

@@ -116,13 +116,19 @@ export function useWebRTC(): UseWebRTCReturn {
     setShareUrl(null);
   }, []);
 
-  // Auto-detect receive mode from URL fragment on mount
+  // Auto-detect receive mode from URL fragment on mount and hashchange
   useEffect(() => {
-    const fragment = parseURLFragment();
-    if (fragment) {
-      startReceiving();
-    }
+    const checkHash = () => {
+      const fragment = parseURLFragment();
+      if (fragment) {
+        startReceiving(fragment.roomId, fragment.rawKey);
+      }
+    };
+
+    checkHash();
+    window.addEventListener('hashchange', checkHash);
     return () => {
+      window.removeEventListener('hashchange', checkHash);
       engineRef.current?.destroy();
     };
   }, [startReceiving]);
